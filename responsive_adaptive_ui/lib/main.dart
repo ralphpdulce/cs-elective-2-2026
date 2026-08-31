@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -7,116 +8,352 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Responsive & Adaptive Dashboard',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFE0E0E0),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF2C2C2C),
+          foregroundColor: Colors.white,
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const DashboardScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+class _DashboardScreenState extends State<DashboardScreen> {
+  // State to track current platform mode
+  TargetPlatform _currentPlatform = TargetPlatform.android;
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    final isCupertino = _currentPlatform == TargetPlatform.iOS;
+
+    // Apply active platform target across app widgets
+    return Theme(
+      data: Theme.of(context).copyWith(platform: _currentPlatform),
+      child: Scaffold(
+        // Floating button to toggle platform mode on live preview
+        floatingActionButton: FloatingActionButton.extended(
+          backgroundColor: isCupertino ? Colors.blue : Colors.black87,
+          foregroundColor: Colors.white,
+          icon: Icon(isCupertino ? Icons.phone_iphone : Icons.phone_android),
+          label: Text(
+            isCupertino ? 'Mode: iOS (Cupertino)' : 'Mode: Android (Material)',
+          ),
+          onPressed: () {
+            setState(() {
+              _currentPlatform = isCupertino
+                  ? TargetPlatform.android
+                  : TargetPlatform.iOS;
+            });
+          },
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final isDesktop = constraints.maxWidth >= 1100;
+
+            // Cupertino/iOS Navigation wrapper
+            if (isCupertino && !isDesktop) {
+              return CupertinoPageScaffold(
+                navigationBar: CupertinoNavigationBar(
+                  middle: Text(
+                    'responsivedashboard (${_currentPlatform.name})',
+                  ),
+                  backgroundColor: const Color(0xFF2C2C2C),
+                ),
+                child: SafeArea(child: _buildLayout(constraints)),
+              );
+            }
+
+            // Material/Android Navigation wrapper
+            return Scaffold(
+              appBar: isDesktop
+                  ? null
+                  : AppBar(
+                      title: Text(
+                        'responsivedashboard (${_currentPlatform.name})',
+                      ),
+                      elevation: 0,
+                    ),
+              drawer: isDesktop ? null : const _AppDrawer(),
+              body: _buildLayout(constraints),
+            );
+          },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+
+  // 1. Responsive Layout Switcher
+  Widget _buildLayout(BoxConstraints constraints) {
+    if (constraints.maxWidth < 600) {
+      return _MobileLayout(platform: _currentPlatform);
+    } else if (constraints.maxWidth < 1100) {
+      return _TabletLayout(platform: _currentPlatform);
+    } else {
+      return _DesktopLayout(platform: _currentPlatform);
+    }
+  }
+}
+
+// --- Wireframe Reusable Boxes ---
+
+class _WireframeBox extends StatelessWidget {
+  final double? height;
+  final Widget? child;
+
+  const _WireframeBox({this.height, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xFFC4C4C4),
+        borderRadius: BorderRadius.circular(6),
       ),
+      child: child,
+    );
+  }
+}
+
+// --- Drawer Navigation Menu ---
+
+class _AppDrawer extends StatelessWidget {
+  const _AppDrawer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 240,
+      color: const Color(0xFFD9D9D9),
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          const Icon(Icons.favorite, size: 50, color: Colors.black87),
+          const SizedBox(height: 40),
+          _drawerItem(Icons.home, 'D A S H B O A R D'),
+          _drawerItem(Icons.settings, 'S E T T I N G S'),
+          _drawerItem(Icons.info, 'A B O U T'),
+          _drawerItem(Icons.logout, 'L O G O U T'),
+        ],
+      ),
+    );
+  }
+
+  Widget _drawerItem(IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.black87),
+          const SizedBox(width: 16),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.1,
+              color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- Platform-Adaptive Button Component ---
+
+class _AdaptiveButton extends StatelessWidget {
+  final String label;
+  final TargetPlatform platform;
+
+  const _AdaptiveButton({required this.label, required this.platform});
+
+  @override
+  Widget build(BuildContext context) {
+    if (platform == TargetPlatform.iOS) {
+      return CupertinoButton.filled(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        onPressed: () {},
+        child: Text(label),
+      );
+    }
+    return ElevatedButton(
+      onPressed: () {},
+      child: Text(label),
+    );
+  }
+}
+
+// --- Responsive Layout Variants ---
+
+class _MobileLayout extends StatelessWidget {
+  final TargetPlatform platform;
+  const _MobileLayout({required this.platform});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: GridView.count(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              physics: const NeverScrollableScrollPhysics(),
+              children: const [
+                _WireframeBox(),
+                _WireframeBox(),
+                _WireframeBox(),
+                _WireframeBox(),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.separated(
+              itemCount: 3,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, __) => const _WireframeBox(height: 50),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _AdaptiveButton(label: 'Mobile Adaptive Action', platform: platform),
+        ],
+      ),
+    );
+  }
+}
+
+class _TabletLayout extends StatelessWidget {
+  final TargetPlatform platform;
+  const _TabletLayout({required this.platform});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 100,
+            child: Row(
+              children: const [
+                Expanded(child: _WireframeBox()),
+                SizedBox(width: 10),
+                Expanded(child: _WireframeBox()),
+                SizedBox(width: 10),
+                Expanded(child: _WireframeBox()),
+                SizedBox(width: 10),
+                Expanded(child: _WireframeBox()),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.separated(
+              itemCount: 4,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (_, __) => const _WireframeBox(height: 60),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _AdaptiveButton(label: 'Tablet Adaptive Action', platform: platform),
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopLayout extends StatelessWidget {
+  final TargetPlatform platform;
+  const _DesktopLayout({required this.platform});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const _AppDrawer(),
+        Expanded(
+          flex: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              children: [
+                Container(
+                  height: 35,
+                  width: double.infinity,
+                  color: const Color(0xFF2C2C2C),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'responsivedashboard (${platform.name})',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 100,
+                  child: Row(
+                    children: const [
+                      Expanded(child: _WireframeBox()),
+                      SizedBox(width: 10),
+                      Expanded(child: _WireframeBox()),
+                      SizedBox(width: 10),
+                      Expanded(child: _WireframeBox()),
+                      SizedBox(width: 10),
+                      Expanded(child: _WireframeBox()),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.separated(
+                    itemCount: 4,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (_, __) => const _WireframeBox(height: 50),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _AdaptiveButton(
+                  label: 'Desktop Adaptive Action',
+                  platform: platform,
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 59.0, right: 12.0, bottom: 12.0),
+            child: Column(
+              children: const [
+                Expanded(flex: 2, child: _WireframeBox()),
+                SizedBox(height: 10),
+                Expanded(flex: 1, child: _WireframeBox()),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
