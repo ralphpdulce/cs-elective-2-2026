@@ -113,7 +113,7 @@ class _WireframeBox extends StatelessWidget {
   final double? height;
   final Widget? child;
 
-  const _WireframeBox({this.height, this.child});
+  const _WireframeBox({this.height}) : child = null;
 
   @override
   Widget build(BuildContext context) {
@@ -227,8 +227,8 @@ class _MobileLayout extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               itemCount: 3,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, __) => const _WireframeBox(height: 50),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (_, _) => const _WireframeBox(height: 50),
             ),
           ),
           const SizedBox(height: 8),
@@ -267,8 +267,8 @@ class _TabletLayout extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               itemCount: 4,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, __) => const _WireframeBox(height: 60),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (_, _) => const _WireframeBox(height: 60),
             ),
           ),
           const SizedBox(height: 8),
@@ -323,8 +323,8 @@ class _DesktopLayout extends StatelessWidget {
                 Expanded(
                   child: ListView.separated(
                     itemCount: 4,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, __) => const _WireframeBox(height: 50),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (_, _) => const _WireframeBox(height: 50),
                   ),
                 ),
                 const SizedBox(height: 8),
