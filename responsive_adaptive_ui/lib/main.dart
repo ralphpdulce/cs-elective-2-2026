@@ -97,7 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // 1. Responsive Layout Switcher
+  // Responsive Layout Switcher
   Widget _buildLayout(BoxConstraints constraints) {
     if (constraints.maxWidth < 600) {
       return _MobileLayout(platform: _currentPlatform);
@@ -108,8 +108,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 }
-
-// --- Wireframe Reusable Boxes ---
 
 class _WireframeBox extends StatelessWidget {
   final double? height;
@@ -130,7 +128,6 @@ class _WireframeBox extends StatelessWidget {
   }
 }
 
-// --- Drawer Navigation Menu ---
 
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer();
@@ -176,8 +173,7 @@ class _AppDrawer extends StatelessWidget {
   }
 }
 
-// --- Platform-Adaptive Button Component ---
-
+// Platform-Adaptive Button Component
 class _AdaptiveButton extends StatelessWidget {
   final String label;
   final TargetPlatform platform;
@@ -200,7 +196,7 @@ class _AdaptiveButton extends StatelessWidget {
   }
 }
 
-// --- Responsive Layout Variants ---
+// Responsive Layout Variants
 
 class _MobileLayout extends StatelessWidget {
   final TargetPlatform platform;
