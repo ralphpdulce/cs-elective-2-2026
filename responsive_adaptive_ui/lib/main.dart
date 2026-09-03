@@ -97,7 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // 1. Responsive Layout Switcher
+  // Responsive Layout Switcher
   Widget _buildLayout(BoxConstraints constraints) {
     if (constraints.maxWidth < 600) {
       return _MobileLayout(platform: _currentPlatform);
@@ -109,13 +109,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// --- Wireframe Reusable Boxes ---
-
 class _WireframeBox extends StatelessWidget {
   final double? height;
   final Widget? child;
 
-  const _WireframeBox({this.height, this.child});
+  const _WireframeBox({this.height}) : child = null;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +128,6 @@ class _WireframeBox extends StatelessWidget {
   }
 }
 
-// --- Drawer Navigation Menu ---
 
 class _AppDrawer extends StatelessWidget {
   const _AppDrawer();
@@ -176,8 +173,7 @@ class _AppDrawer extends StatelessWidget {
   }
 }
 
-// --- Platform-Adaptive Button Component ---
-
+// Platform-Adaptive Button Component
 class _AdaptiveButton extends StatelessWidget {
   final String label;
   final TargetPlatform platform;
@@ -200,7 +196,7 @@ class _AdaptiveButton extends StatelessWidget {
   }
 }
 
-// --- Responsive Layout Variants ---
+// Responsive Layout Variants
 
 class _MobileLayout extends StatelessWidget {
   final TargetPlatform platform;
@@ -231,8 +227,8 @@ class _MobileLayout extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               itemCount: 3,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, __) => const _WireframeBox(height: 50),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (_, _) => const _WireframeBox(height: 50),
             ),
           ),
           const SizedBox(height: 8),
@@ -271,8 +267,8 @@ class _TabletLayout extends StatelessWidget {
           Expanded(
             child: ListView.separated(
               itemCount: 4,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (_, __) => const _WireframeBox(height: 60),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (_, _) => const _WireframeBox(height: 60),
             ),
           ),
           const SizedBox(height: 8),
@@ -327,8 +323,8 @@ class _DesktopLayout extends StatelessWidget {
                 Expanded(
                   child: ListView.separated(
                     itemCount: 4,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (_, __) => const _WireframeBox(height: 50),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
+                    itemBuilder: (_, _) => const _WireframeBox(height: 50),
                   ),
                 ),
                 const SizedBox(height: 8),
