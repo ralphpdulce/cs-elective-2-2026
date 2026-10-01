@@ -29,7 +29,7 @@ class AppTheme {
       
       // Gray cards
       cardTheme: CardThemeData(
-        color: colorScheme.primaryContainer.withOpacity(0.3),
+        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
         elevation: 2,
       ),
       
