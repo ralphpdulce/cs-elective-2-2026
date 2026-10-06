@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
+import 'providers/pokemon_provider.dart';
 import 'screens/pokedex_screen.dart';
 
 void main() {
@@ -101,9 +103,12 @@ class _MyAppState extends State<MyApp> {
       themeMode: _themeMode,
       theme: _buildTheme(Brightness.light),
       darkTheme: _buildTheme(Brightness.dark),
-      home: PokedexScreen(
-        isDarkMode: _themeMode == ThemeMode.dark,
-        onToggleTheme: _toggleTheme,
+      home: ChangeNotifierProvider(
+        create: (_) => PokemonProvider()..fetchPokemon(),
+        child: PokedexScreen(
+          isDarkMode: _themeMode == ThemeMode.dark,
+          onToggleTheme: _toggleTheme,
+        ),
       ),
     );
   }
