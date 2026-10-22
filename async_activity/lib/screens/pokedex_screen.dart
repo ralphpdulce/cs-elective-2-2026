@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../models/pokemon.dart';
-import '../services/pokemon_service.dart';
+import '../providers/pokemon_provider.dart';
 import '../widgets/pokemon_card.dart';
 
 class PokedexScreen extends StatefulWidget {
   const PokedexScreen({
     super.key,
-    this._service,
     required this.isDarkMode,
     required this.onToggleTheme,
   });
 
-  final PokemonService? _service;
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
 
@@ -22,18 +21,11 @@ class PokedexScreen extends StatefulWidget {
 }
 
 class _PokedexScreenState extends State<PokedexScreen> {
-  late Future<List<Pokemon>> _pokemonFuture;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   int _currentPage = 0;
 
   static const _pageSize = 10;
-
-  @override
-  void initState() {
-    super.initState();
-    _pokemonFuture = (widget._service ?? PokemonService()).fetchPokemon();
-  }
 
   @override
   void dispose() {
@@ -53,10 +45,8 @@ class _PokedexScreenState extends State<PokedexScreen> {
   }
 
   void _retry() {
-    setState(() {
-      _pokemonFuture = (widget._service ?? PokemonService()).fetchPokemon();
-      _currentPage = 0;
-    });
+    setState(() => _currentPage = 0);
+    context.read<PokemonProvider>().fetchPokemon();
   }
 
   void _updateSearch(String value) {
@@ -69,7 +59,169 @@ class _PokedexScreenState extends State<PokedexScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final pokemonProvider = context.watch<PokemonProvider>();
 
+    if (pokemonProvider.status == PokemonStatus.idle ||
+        pokemonProvider.status == PokemonStatus.loading) {
+      return _buildScaffold(
+        context,
+        const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (pokemonProvider.status == PokemonStatus.error) {
+      return _buildScaffold(
+        context,
+        _MessageState(
+          icon: Icons.cloud_off_outlined,
+          message: 'Could not load Pokemon.',
+          actionLabel: 'Try again',
+          onAction: _retry,
+        ),
+      );
+    }
+
+    final pokemon = pokemonProvider.pokemon;
+    if (pokemon.isEmpty) {
+      return _buildScaffold(
+        context,
+        const _MessageState(
+          icon: Icons.catching_pokemon,
+          message: 'No Pokemon found.',
+        ),
+      );
+    }
+
+    final matchingPokemon = _matchingPokemon(pokemon);
+    final pageCount = (matchingPokemon.length / _pageSize).ceil().clamp(1, 999);
+    final page = _currentPage.clamp(0, pageCount - 1);
+    final pageStart = page * _pageSize;
+    final pageEnd = (pageStart + _pageSize).clamp(0, matchingPokemon.length);
+    final visiblePokemon = matchingPokemon.sublist(pageStart, pageEnd);
+
+    return _buildScaffold(
+      context,
+      CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  borderRadius: BorderRadius.zero,
+                  border: Border.all(color: const Color(0xFF111111), width: 2),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      offset: Offset(0, 4),
+                      blurRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        'POKEDEX // TRAINER MODE',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Explore Pokemon',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${pokemon.length} Pokemon loaded successfully',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: Colors.white),
+                      ),
+                      const SizedBox(height: 18),
+                      SearchBar(
+                        controller: _searchController,
+                        hintText: 'Search Pokemon',
+                        leading: const Icon(Icons.search),
+                        trailing: [
+                          if (_searchQuery.isNotEmpty)
+                            IconButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                _updateSearch('');
+                              },
+                              tooltip: 'Clear search',
+                              icon: const Icon(Icons.close),
+                            ),
+                        ],
+                        onChanged: _updateSearch,
+                      ),
+                      const SizedBox(height: 18),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (matchingPokemon.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
+                child: _PaginationControls(
+                  currentPage: page,
+                  pageCount: pageCount,
+                  onPrevious: page == 0
+                      ? null
+                      : () => setState(() => _currentPage--),
+                  onNext: page == pageCount - 1
+                      ? null
+                      : () => setState(() => _currentPage++),
+                ),
+              ),
+            ),
+          if (matchingPokemon.isEmpty)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: _MessageState(
+                icon: Icons.search_off,
+                message: 'No Pokemon match your search.',
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+              sliver: SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) =>
+                      PokemonCard(pokemon: visiblePokemon[index]),
+                  childCount: visiblePokemon.length,
+                ),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 220,
+                  mainAxisExtent: 240,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, Widget body) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -92,167 +244,7 @@ class _PokedexScreenState extends State<PokedexScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: FutureBuilder<List<Pokemon>>(
-        future: _pokemonFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError) {
-            return _MessageState(
-              icon: Icons.cloud_off_outlined,
-              message: 'Could not load Pokemon.',
-              actionLabel: 'Try again',
-              onAction: _retry,
-            );
-          }
-
-          final pokemon = snapshot.data ?? <Pokemon>[];
-          if (pokemon.isEmpty) {
-            return const _MessageState(
-              icon: Icons.catching_pokemon,
-              message: 'No Pokemon found.',
-            );
-          }
-
-          final matchingPokemon = _matchingPokemon(pokemon);
-          final pageCount = (matchingPokemon.length / _pageSize).ceil().clamp(
-            1,
-            999,
-          );
-          final page = _currentPage.clamp(0, pageCount - 1);
-          final pageStart = page * _pageSize;
-          final pageEnd = (pageStart + _pageSize).clamp(
-            0,
-            matchingPokemon.length,
-          );
-          final visiblePokemon = matchingPokemon.sublist(pageStart, pageEnd);
-
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.zero,
-                      border: Border.all(
-                        color: const Color(0xFF111111),
-                        width: 2,
-                      ),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          offset: Offset(0, 4),
-                          blurRadius: 0,
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            'POKEDEX // TRAINER MODE',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.labelLarge
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1.4,
-                                ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Explore Pokemon',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Search by name or browse the pages.',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.white),
-                          ),
-                          const SizedBox(height: 18),
-                          SearchBar(
-                            controller: _searchController,
-                            hintText: 'Search Pokemon',
-                            leading: const Icon(Icons.search),
-                            trailing: [
-                              if (_searchQuery.isNotEmpty)
-                                IconButton(
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _updateSearch('');
-                                  },
-                                  tooltip: 'Clear search',
-                                  icon: const Icon(Icons.close),
-                                ),
-                            ],
-                            onChanged: _updateSearch,
-                          ),
-                          const SizedBox(height: 18),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (matchingPokemon.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                    child: _PaginationControls(
-                      currentPage: page,
-                      pageCount: pageCount,
-                      onPrevious: page == 0
-                          ? null
-                          : () => setState(() => _currentPage--),
-                      onNext: page == pageCount - 1
-                          ? null
-                          : () => setState(() => _currentPage++),
-                    ),
-                  ),
-                ),
-              if (matchingPokemon.isEmpty)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _MessageState(
-                    icon: Icons.search_off,
-                    message: 'No Pokemon match your search.',
-                  ),
-                )
-              else
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                  sliver: SliverGrid(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) =>
-                          PokemonCard(pokemon: visiblePokemon[index]),
-                      childCount: visiblePokemon.length,
-                    ),
-                    gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 220,
-                          mainAxisExtent: 240,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                        ),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
+      body: body,
     );
   }
 }
