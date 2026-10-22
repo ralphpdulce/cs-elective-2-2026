@@ -1,0 +1,47 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../models/pokemon.dart';
+
+class PokemonService {
+  PokemonService({http.Client? client}) : _client = client ?? http.Client();
+
+  static final Uri _endpoint = Uri.parse(
+    'https://pokeapi.co/api/v2/pokemon?limit=30',
+  );
+
+  final http.Client _client;
+
+  Future<List<Pokemon>> fetchPokemon() async {
+    final response = await _client.get(_endpoint);
+
+    if (response.statusCode != 200) {
+      throw Exception('Unable to load Pokemon (${response.statusCode}).');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final results = data['results'] as List<dynamic>;
+
+    // Fetch details in parallel to obtain real type data for each Pokémon
+    final pokemonList = await Future.wait(
+      results.map((item) async {
+        final itemMap = item as Map<String, dynamic>;
+        final urlStr = itemMap['url'] as String;
+        try {
+          final detailResponse = await _client.get(Uri.parse(urlStr));
+          if (detailResponse.statusCode == 200) {
+            final detailData =
+                jsonDecode(detailResponse.body) as Map<String, dynamic>;
+            return Pokemon.fromDetailJson(detailData);
+          }
+        } catch (_) {
+          // Gracefully fallback to basic information if detail fails
+        }
+        return Pokemon.fromBasicJson(itemMap);
+      }),
+    );
+
+    return pokemonList;
+  }
+}
