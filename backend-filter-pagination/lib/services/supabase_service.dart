@@ -8,15 +8,15 @@ class SupabaseService {
   SupabaseClient? _client;
   bool _isInitialized = false;
 
-  // In-memory fallback dataset for seamless offline testing / demo
+  // In-memory fallback dataset
   final List<Product> _localProducts = List.from(sampleProducts);
 
   bool get isConnected => _isInitialized && SupabaseConfig.isConfigured;
 
   /// Initialize Supabase if credentials are provided
-  Future<void> initialize() async {
-    if (!SupabaseConfig.isConfigured) {
-      debugPrint('[SupabaseService] Credentials not set in supabase_config.dart. Using in-memory fallback.');
+  Future<void> initialize({bool forceLocal = false}) async {
+    if (forceLocal || !SupabaseConfig.isConfigured) {
+      debugPrint('[SupabaseService] Using in-memory fallback.');
       return;
     }
 

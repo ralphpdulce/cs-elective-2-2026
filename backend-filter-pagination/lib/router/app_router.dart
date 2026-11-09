@@ -38,3 +38,4 @@ GoRouter createRouter({required void Function() onToggleTheme}) {
     ],
   );
 }
+

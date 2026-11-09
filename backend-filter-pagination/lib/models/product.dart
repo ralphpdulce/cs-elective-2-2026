@@ -237,3 +237,4 @@ const List<Product> sampleProducts = [
         'Diligence is the foundation of the city of rock. Industry and perseverance pave the road to prosperity.',
   ),
 ];
+

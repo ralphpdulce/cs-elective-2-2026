@@ -108,91 +108,95 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Image banner with Badge and Action Buttons
-            Stack(
-              children: [
-                SizedBox(
-                  height: 140,
-                  width: double.infinity,
-                  child: _buildProductImage(product.imageUrl),
-                ),
-                if (product.badge != null)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        product.badge!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+            // Top Image banner with Badge and Action Buttons (takes remaining space)
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _buildProductImage(product.imageUrl),
+                  if (product.badge != null)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          product.badge!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
+                  // Edit & Delete CRUD buttons
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.edit, size: 16, color: Colors.white),
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.all(4),
+                            tooltip: 'Edit Product',
+                            onPressed: () => _editProduct(context),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 16, color: Colors.white),
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.all(4),
+                            tooltip: 'Delete Product',
+                            onPressed: () => _confirmDelete(context),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                // Edit & Delete CRUD buttons
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.edit, size: 16, color: Colors.white),
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.all(4),
-                          tooltip: 'Edit Product',
-                          onPressed: () => _editProduct(context),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 16, color: Colors.white),
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.all(4),
-                          tooltip: 'Delete Product',
-                          onPressed: () => _confirmDelete(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-            // Product Info
+            // Product Info (compact and strictly sized to prevent any overflow or blank space)
             Padding(
-              padding: const EdgeInsets.all(10.0),
+              padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        product.category.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 10,
-                          letterSpacing: 0.8,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.secondary,
+                      Expanded(
+                        child: Text(
+                          product.category.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            letterSpacing: 0.8,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.star, size: 14, color: Colors.amber),
                           const SizedBox(width: 2),
@@ -207,13 +211,13 @@ class ProductCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       height: 1.2,
                     ),
@@ -222,14 +226,18 @@ class ProductCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '\$${product.price.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: Theme.of(context).colorScheme.primary,
+                      Flexible(
+                        child: Text(
+                          '\$${product.price.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 4),
                       FilledButton.tonal(
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
@@ -255,8 +263,8 @@ class ProductCard extends StatelessWidget {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.add_shopping_cart, size: 14),
-                            SizedBox(width: 4),
+                            Icon(Icons.add_shopping_cart, size: 13),
+                            SizedBox(width: 3),
                             Text('Add', style: TextStyle(fontSize: 11)),
                           ],
                         ),

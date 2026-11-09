@@ -9,7 +9,7 @@ void main() {
       (WidgetTester tester) async {
     final service = SupabaseService();
     final provider = ProductProvider(service: service);
-    await provider.initialize();
+    await provider.initialize(forceLocal: true);
 
     await tester.pumpWidget(
       ChangeNotifierProvider.value(

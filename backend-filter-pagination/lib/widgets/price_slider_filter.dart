@@ -125,3 +125,4 @@ class PriceSliderFilter extends StatelessWidget {
     );
   }
 }
+

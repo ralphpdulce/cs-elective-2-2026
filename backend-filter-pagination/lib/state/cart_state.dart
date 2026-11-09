@@ -62,3 +62,4 @@ class CartState extends ChangeNotifier {
 
 // Global instance for app-wide access matching prelim_exam pattern
 final cartState = CartState();
+

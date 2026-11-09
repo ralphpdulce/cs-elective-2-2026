@@ -112,10 +112,13 @@ class _HomeScreenState extends State<HomeScreen> {
         label: const Text('Add Product'),
       ),
       bottomNavigationBar: const PaginationBar(),
-      body: RefreshIndicator(
-        onRefresh: () => provider.loadProducts(),
-        child: CustomScrollView(
-          slivers: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: RefreshIndicator(
+            onRefresh: () => provider.loadProducts(),
+            child: CustomScrollView(
+              slivers: [
             // Backend status banner
             SliverToBoxAdapter(
               child: Container(
@@ -290,11 +293,11 @@ class _HomeScreenState extends State<HomeScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.68,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 240,
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 0.72,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
@@ -308,6 +311,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

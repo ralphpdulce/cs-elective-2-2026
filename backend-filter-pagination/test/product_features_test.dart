@@ -5,6 +5,8 @@ import 'package:backend_filter_pagination/state/product_provider.dart';
 import 'package:flutter/material.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('ProductProvider Filter & Pagination Tests', () {
     late SupabaseService service;
     late ProductProvider provider;
@@ -12,7 +14,7 @@ void main() {
     setUp(() async {
       service = SupabaseService();
       provider = ProductProvider(service: service);
-      await provider.initialize();
+      await provider.initialize(forceLocal: true);
     });
 
     test('Initial state loads first page with max 6 products', () {
@@ -49,9 +51,7 @@ void main() {
 
     test('Price slider filter filters products correctly', () async {
       // Set a restrictive price range: $50 to $200
-      provider.updatePriceRange(const RangeValues(50.0, 200.0));
-      // Wait for debounce timer to fire
-      await Future.delayed(const Duration(milliseconds: 400));
+      await provider.setPriceRange(const RangeValues(50.0, 200.0));
 
       for (final p in provider.products) {
         expect(p.price, greaterThanOrEqualTo(50.0));

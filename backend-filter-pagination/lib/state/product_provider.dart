@@ -47,12 +47,12 @@ class ProductProvider extends ChangeNotifier {
   bool get isConnectedToSupabase => _service.isConnected;
 
   /// Initialize service, fetch price range, and load first page
-  Future<void> initialize() async {
+  Future<void> initialize({bool forceLocal = false}) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      await _service.initialize();
+      await _service.initialize(forceLocal: forceLocal);
       final bounds = await _service.getPriceBounds();
       _minPriceBound = (bounds.min.floorToDouble() / 10).floor() * 10;
       _maxPriceBound = (bounds.max.ceilToDouble() / 50).ceil() * 50;
@@ -124,6 +124,13 @@ class ProductProvider extends ChangeNotifier {
     _debounceTimer = Timer(const Duration(milliseconds: 350), () {
       loadProducts(resetPage: true);
     });
+  }
+
+  /// Explicitly set price range and immediately trigger query without debounce
+  Future<void> setPriceRange(RangeValues values) async {
+    _debounceTimer?.cancel();
+    _currentPriceRange = values;
+    await loadProducts(resetPage: true);
   }
 
   /// Category filter change handler
