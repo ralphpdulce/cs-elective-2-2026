@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:backend_auth/models/product.dart';
+import 'package:backend_auth/services/genshin_api_service.dart';
 import 'package:backend_auth/services/supabase_service.dart';
 import 'package:backend_auth/state/product_provider.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ void main() {
       await provider.initialize(forceLocal: true);
     });
 
-    test('Initial state loads first page with max 6 products', () {
+    test('Initial state loads first page with max 6 characters', () {
       expect(provider.pageSize, equals(6));
       expect(provider.currentPage, equals(1));
       expect(provider.products.length, lessThanOrEqualTo(6));
@@ -50,45 +51,102 @@ void main() {
     });
 
     test('Price slider filter filters products correctly', () async {
-      // Set a restrictive price range: $50 to $200
-      await provider.setPriceRange(const RangeValues(50.0, 200.0));
+      // Set price range spanning 4-star characters: $300 to $400
+      await provider.setPriceRange(const RangeValues(300.0, 400.0));
 
-      for (final p in provider.products) {
-        expect(p.price, greaterThanOrEqualTo(50.0));
-        expect(p.price, lessThanOrEqualTo(200.0));
-      }
-    });
-
-    test('Category filter filters products by category', () async {
-      await provider.setCategory('Weapons');
       expect(provider.products, isNotEmpty);
       for (final p in provider.products) {
-        expect(p.category, equals('Weapons'));
+        expect(p.price, greaterThanOrEqualTo(300.0));
+        expect(p.price, lessThanOrEqualTo(400.0));
       }
     });
 
-    test('CRUD: Add, Update, and Delete product', () async {
+    test('Category filter filters characters by Vision', () async {
+      await provider.setCategory('Pyro');
+      expect(provider.products, isNotEmpty);
+      for (final p in provider.products) {
+        expect(p.category, equals('Pyro'));
+      }
+
+      await provider.setCategory('Geo');
+      expect(provider.products, isNotEmpty);
+      for (final p in provider.products) {
+        expect(p.category, equals('Geo'));
+      }
+    });
+
+    test('CRUD: Add, Update, and Delete character', () async {
       final initialCount = provider.totalCount;
 
       // 1. Create
       const newProduct = Product(
-        id: 'test-item-999',
-        name: 'Prototype Starglitter',
-        price: 349.99,
-        category: 'Weapons',
-        rating: 4.6,
-        description: 'A polearm forged in the Blackcliff Forge.',
+        id: 'test-char-999',
+        name: 'Mavuika',
+        price: 1499.99,
+        category: 'Pyro',
+        rating: 5.0,
+        badge: '5★ ARCHON',
+        description: 'The Pyro Archon of Natlan.',
       );
       await provider.addProduct(newProduct);
       expect(provider.totalCount, equals(initialCount + 1));
 
       // 2. Update
-      final updatedProduct = newProduct.copyWith(name: 'Refined Starglitter');
+      final updatedProduct = newProduct.copyWith(name: 'Habakkuk Mavuika');
       await provider.updateProduct(updatedProduct);
 
       // 3. Delete
-      await provider.deleteProduct('test-item-999');
+      await provider.deleteProduct('test-char-999');
       expect(provider.totalCount, equals(initialCount));
+    });
+  });
+
+  group('GenshinApiService Tests', () {
+    test('mapCharacterToProduct correctly maps raw API map into Product with calculated price', () {
+      final rawMap = {
+        'key': 'raiden',
+        'name': 'Raiden Shogun',
+        'title': 'Plane of Euthymia',
+        'vision': 'Electro',
+        'weapon': 'Polearm',
+        'nation': 'Inazuma',
+        'rarity': 5,
+        'img': {
+          'card': 'https://pub-1ad979b6618d4a07ab871591a84b954c.r2.dev/raiden/card.png',
+        },
+      };
+
+      final product = GenshinApiService.mapCharacterToProduct(rawMap);
+      expect(product, isNotNull);
+      expect(product!.id, equals('raiden'));
+      expect(product.name, equals('Raiden Shogun'));
+      expect(product.category, equals('Electro'));
+      expect(product.badge, equals('5★ ARCHON'));
+      expect(product.price, greaterThanOrEqualTo(899.99));
+      expect(product.rating, greaterThanOrEqualTo(4.8));
+      expect(product.imageUrl, contains('raiden/card.png'));
+    });
+
+    test('mapCharacterToProduct handles 4-star character pricing', () {
+      final rawMap = {
+        'key': 'bennett',
+        'name': 'Bennett',
+        'title': 'Trial by Fire',
+        'vision': 'Pyro',
+        'weapon': 'Sword',
+        'nation': 'Mondstadt',
+        'rarity': 4,
+        'img': {
+          'card': 'https://pub-1ad979b6618d4a07ab871591a84b954c.r2.dev/bennett/card.png',
+        },
+      };
+
+      final product = GenshinApiService.mapCharacterToProduct(rawMap);
+      expect(product, isNotNull);
+      expect(product!.badge, equals('4★ FEATURED'));
+      expect(product.price, greaterThanOrEqualTo(249.99));
+      expect(product.price, lessThanOrEqualTo(599.99));
+      expect(product.category, equals('Pyro'));
     });
   });
 }

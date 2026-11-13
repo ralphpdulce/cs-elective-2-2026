@@ -24,10 +24,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final List<String> categories = [
     'All',
-    'Weapons',
-    'Talent Books',
-    'Gadgets',
-    'Gemstones',
+    'Pyro',
+    'Hydro',
+    'Anemo',
+    'Electro',
+    'Dendro',
+    'Cryo',
+    'Geo',
   ];
 
   @override
@@ -44,6 +47,104 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _rebuild() => setState(() {});
+
+  void _showCreditsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Theme.of(ctx).colorScheme.primary),
+            const SizedBox(width: 10),
+            const Text(
+              'API Courtesy & Credits',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(ctx).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'API Courtesy of:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Genshin Impact API by Devesh Anand',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    SelectableText(
+                      'https://github.com/devesh-anand/genshin-api',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(ctx).colorScheme.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    SelectableText(
+                      'https://genshin-impact.up.railway.app',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(ctx).colorScheme.primary,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Architecture & Data Pipeline:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '• Dynamic REST character endpoint on Railway\n'
+                '• High-resolution character card assets hosted on Cloudflare R2\n'
+                '• Real-time synchronization into Supabase PostgreSQL backend\n'
+                '• Server-side price filtering, pagination, and OAuth integration',
+                style: TextStyle(fontSize: 12, height: 1.4),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Disclaimer: Genshin Impact, character assets, images, and lore are copyright © HoYoverse / COGNOSPHERE PTE. LTD. This application is an educational student project for CS Elective 2.',
+                  style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _addNewProduct() async {
     final provider = context.read<ProductProvider>();
@@ -105,6 +206,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               onPressed: () => context.push('/login'),
             ),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'API Courtesy & Credits',
+            onPressed: () => _showCreditsDialog(context),
+          ),
           IconButton(
             icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
             onPressed: widget.onToggleTheme,
@@ -215,6 +321,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 context.push('/cart');
               },
             ),
+            const Divider(),
+            ListTile(
+              leading: provider.isSyncing
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync),
+              title: const Text('Sync API Characters'),
+              subtitle: const Text('Fetch latest characters to Supabase'),
+              onTap: provider.isSyncing
+                  ? null
+                  : () async {
+                      Navigator.pop(context);
+                      final count = await provider.syncFromGenshinApi();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              count > 0
+                                  ? 'Synced $count characters from Genshin Impact API!'
+                                  : 'Character sync completed.',
+                            ),
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    },
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome_outlined),
+              title: const Text('API Courtesy & Credits'),
+              subtitle: const Text('devesh-anand/genshin-api'),
+              onTap: () {
+                Navigator.pop(context);
+                _showCreditsDialog(context);
+              },
+            ),
           ],
         ),
       ),
@@ -253,8 +398,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: Text(
                         provider.isConnectedToSupabase
-                            ? 'Connected to Supabase Backend • ${auth.isAuthenticated ? "Auth: ${auth.displayName} (${auth.providerName})" : "Guest Mode"}'
-                            : 'Running local cache mode • ${auth.isAuthenticated ? "Auth: ${auth.displayName} (${auth.providerName})" : "Guest Mode"}',
+                            ? 'Connected to Supabase • ${auth.isAuthenticated ? "Auth: ${auth.displayName}" : "Guest Mode"} • API: devesh-anand'
+                            : 'Running local cache • ${auth.isAuthenticated ? "Auth: ${auth.displayName}" : "Guest Mode"} • API: devesh-anand',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -262,8 +407,29 @@ class _HomeScreenState extends State<HomeScreen> {
                               ? Colors.green[800]
                               : Colors.amber[900],
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
+                    if (provider.isSyncing)
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      InkWell(
+                        onTap: () => _showCreditsDialog(context),
+                        child: Text(
+                          'API Credits',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

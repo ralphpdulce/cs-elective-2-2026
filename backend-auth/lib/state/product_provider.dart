@@ -11,6 +11,7 @@ class ProductProvider extends ChangeNotifier {
   ProductProvider({required SupabaseService service}) : _service = service;
 
   bool _isLoading = false;
+  bool _isSyncing = false;
   String? _errorMessage;
   List<Product> _products = [];
   int _totalCount = 0;
@@ -22,14 +23,15 @@ class ProductProvider extends ChangeNotifier {
   // Filtering parameters
   String _selectedCategory = 'All';
   String _searchQuery = '';
-  RangeValues _currentPriceRange = const RangeValues(0.0, 1500.0);
-  double _minPriceBound = 0.0;
-  double _maxPriceBound = 1500.0;
+  RangeValues _currentPriceRange = const RangeValues(200.0, 1600.0);
+  double _minPriceBound = 200.0;
+  double _maxPriceBound = 1600.0;
 
   Timer? _debounceTimer;
 
   // Getters
   bool get isLoading => _isLoading;
+  bool get isSyncing => _isSyncing;
   String? get errorMessage => _errorMessage;
   List<Product> get products => List.unmodifiable(_products);
   int get totalCount => _totalCount;
@@ -65,6 +67,31 @@ class ProductProvider extends ChangeNotifier {
     } catch (e) {
       _errorMessage = 'Failed to load initial data: $e';
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Sync live characters from Genshin Impact API into Supabase & local cache
+  Future<int> syncFromGenshinApi({bool force = true}) async {
+    _isSyncing = true;
+    notifyListeners();
+
+    try {
+      final count = await _service.syncCharactersFromApi(force: force);
+      final bounds = await _service.getPriceBounds();
+      _minPriceBound = (bounds.min.floorToDouble() / 10).floor() * 10;
+      _maxPriceBound = (bounds.max.ceilToDouble() / 50).ceil() * 50;
+      if (_maxPriceBound <= _minPriceBound) {
+        _maxPriceBound = _minPriceBound + 1000;
+      }
+      _currentPriceRange = RangeValues(_minPriceBound, _maxPriceBound);
+      await loadProducts(resetPage: true);
+      return count;
+    } catch (e) {
+      _errorMessage = 'Sync failed: $e';
+      return 0;
+    } finally {
+      _isSyncing = false;
       notifyListeners();
     }
   }
@@ -198,9 +225,10 @@ class ProductProvider extends ChangeNotifier {
       final bounds = await _service.getPriceBounds();
       if (bounds.min < _minPriceBound) _minPriceBound = bounds.min;
       if (bounds.max > _maxPriceBound) _maxPriceBound = bounds.max;
-      await loadProducts(resetPage: true);
+      await loadProducts();
     } catch (e) {
       _errorMessage = 'Failed to add product: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -213,9 +241,10 @@ class ProductProvider extends ChangeNotifier {
 
     try {
       await _service.updateProduct(product);
-      await loadProducts(resetPage: false);
+      await loadProducts();
     } catch (e) {
       _errorMessage = 'Failed to update product: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
@@ -228,9 +257,10 @@ class ProductProvider extends ChangeNotifier {
 
     try {
       await _service.deleteProduct(id);
-      await loadProducts(resetPage: false);
+      await loadProducts();
     } catch (e) {
       _errorMessage = 'Failed to delete product: $e';
+    } finally {
       _isLoading = false;
       notifyListeners();
     }

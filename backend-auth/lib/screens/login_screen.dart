@@ -292,3 +292,4 @@ class _GoogleIcon extends StatelessWidget {
     );
   }
 }
+

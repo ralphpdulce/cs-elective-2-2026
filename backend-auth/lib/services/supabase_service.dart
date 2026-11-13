@@ -3,13 +3,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../config/supabase_config.dart';
 import '../models/product.dart';
+import 'genshin_api_service.dart';
 
 class SupabaseService {
+  final GenshinApiService _apiService;
   SupabaseClient? _client;
   bool _isInitialized = false;
 
-  // In-memory fallback dataset
+  // In-memory fallback dataset initialized with rich Genshin character catalog
   final List<Product> _localProducts = List.from(sampleProducts);
+
+  SupabaseService({GenshinApiService? apiService})
+      : _apiService = apiService ?? GenshinApiService();
 
   bool get isConnected => _isInitialized && SupabaseConfig.isConfigured;
 
@@ -29,10 +34,55 @@ class SupabaseService {
       _client = Supabase.instance.client;
       _isInitialized = true;
       debugPrint('[SupabaseService] Successfully connected to Supabase.');
+
+      // Check if table has products; if empty or very few, sync characters
+      await _autoSeedIfEmpty();
     } catch (e) {
       debugPrint('[SupabaseService] Initialization failed: $e. Using local fallback.');
       _isInitialized = false;
     }
+  }
+
+  /// Auto-seed characters to Supabase if products table is currently empty
+  Future<void> _autoSeedIfEmpty() async {
+    if (!isConnected || _client == null) return;
+    try {
+      final res = await _client!.from('products').select('id').limit(5);
+      if (res.isEmpty) {
+        debugPrint('[SupabaseService] Remote products table empty. Auto-seeding characters...');
+        await syncCharactersFromApi(force: true);
+      }
+    } catch (e) {
+      debugPrint('[SupabaseService] Auto-seed check notice: $e');
+    }
+  }
+
+  /// Syncs characters fetched from the Genshin Impact API into Supabase (and local cache).
+  Future<int> syncCharactersFromApi({bool force = false}) async {
+    debugPrint('[SupabaseService] Fetching characters from Genshin Impact API...');
+    final characters = await _apiService.fetchCharacters(fallbackProducts: sampleProducts);
+
+    if (characters.isNotEmpty) {
+      _localProducts.clear();
+      _localProducts.addAll(characters);
+
+      if (isConnected && _client != null) {
+        try {
+          debugPrint('[SupabaseService] Upserting ${characters.length} characters into Supabase products table...');
+          // Upsert in batches of 25 to respect payload sizes
+          for (int i = 0; i < characters.length; i += 25) {
+            final int end = (i + 25 < characters.length) ? i + 25 : characters.length;
+            final batch = characters.sublist(i, end).map((p) => p.toMap()).toList();
+            await _client!.from('products').upsert(batch);
+          }
+          debugPrint('[SupabaseService] Successfully synced ${characters.length} characters into Supabase!');
+        } catch (e) {
+          debugPrint('[SupabaseService] Remote Supabase upsert error: $e');
+        }
+      }
+    }
+
+    return _localProducts.length;
   }
 
   /// Fetch products with price range filtering and pagination via Supabase query
@@ -56,7 +106,7 @@ class SupabaseService {
           query = query.lte('price', maxPrice);
         }
 
-        // 2. Category filter
+        // 2. Category (Vision) filter
         if (category != null && category != 'All') {
           query = query.eq('category', category);
         }
