@@ -36,42 +36,39 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget _buildImage(String? url) {
     if (url == null || url.isEmpty) {
       return Container(
-        height: 280,
-        color: Colors.grey.withValues(alpha: 0.2),
+        height: 320,
+        color: Colors.grey.withValues(alpha: 0.15),
         child: const Center(
           child: Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.grey),
         ),
       );
     }
 
+    Widget img;
     if (url.startsWith('assets/')) {
-      return Image.asset(
+      img = Image.asset(
         url,
-        height: 280,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
-          height: 280,
-          color: Colors.grey.withValues(alpha: 0.2),
-          child: const Center(
-            child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
-          ),
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => const Center(
+          child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
+        ),
+      );
+    } else {
+      img = Image.network(
+        url,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => const Center(
+          child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
         ),
       );
     }
 
-    return Image.network(
-      url,
-      height: 280,
+    return Container(
+      height: 320,
       width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => Container(
-        height: 280,
-        color: Colors.grey.withValues(alpha: 0.2),
-        child: const Center(
-          child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
-        ),
-      ),
+      color: Colors.black.withValues(alpha: 0.04),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(child: img),
     );
   }
 

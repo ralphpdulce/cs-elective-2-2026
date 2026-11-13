@@ -24,6 +24,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final List<String> categories = [
     'All',
+    'Characters',
+    'Weapons',
+    'Materials',
     'Pyro',
     'Hydro',
     'Anemo',

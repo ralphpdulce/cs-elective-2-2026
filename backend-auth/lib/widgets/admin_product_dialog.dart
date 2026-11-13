@@ -29,6 +29,8 @@ class _AdminProductDialogState extends State<AdminProductDialog> {
 
   String _selectedCategory = 'Pyro';
   final List<String> _categories = [
+    'Weapons',
+    'Materials',
     'Pyro',
     'Hydro',
     'Anemo',

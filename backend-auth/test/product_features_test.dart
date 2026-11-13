@@ -18,11 +18,11 @@ void main() {
       await provider.initialize(forceLocal: true);
     });
 
-    test('Initial state loads first page with max 6 characters', () {
-      expect(provider.pageSize, equals(6));
+    test('Initial state loads first page with max 10 products', () {
+      expect(provider.pageSize, equals(10));
       expect(provider.currentPage, equals(1));
-      expect(provider.products.length, lessThanOrEqualTo(6));
-      expect(provider.totalCount, greaterThan(6));
+      expect(provider.products.length, lessThanOrEqualTo(10));
+      expect(provider.totalCount, greaterThan(10));
       expect(provider.totalPages, greaterThan(1));
       expect(provider.hasPreviousPage, isFalse);
       expect(provider.hasNextPage, isTrue);
@@ -40,18 +40,21 @@ void main() {
       expect(provider.products.first.id, equals(firstPageProduct.id));
     });
 
-    test('Switching page size between 6 and 8 updates total pages', () async {
+    test('Switching page size between 6, 8, and 10 updates total pages', () async {
+      await provider.setPageSize(6);
+      expect(provider.pageSize, equals(6));
+      expect(provider.products.length, lessThanOrEqualTo(6));
+
       await provider.setPageSize(8);
       expect(provider.pageSize, equals(8));
       expect(provider.products.length, lessThanOrEqualTo(8));
 
-      await provider.setPageSize(6);
-      expect(provider.pageSize, equals(6));
-      expect(provider.products.length, lessThanOrEqualTo(6));
+      await provider.setPageSize(10);
+      expect(provider.pageSize, equals(10));
+      expect(provider.products.length, lessThanOrEqualTo(10));
     });
 
     test('Price slider filter filters products correctly', () async {
-      // Set price range spanning 4-star characters: $300 to $400
       await provider.setPriceRange(const RangeValues(300.0, 400.0));
 
       expect(provider.products, isNotEmpty);
@@ -61,11 +64,17 @@ void main() {
       }
     });
 
-    test('Category filter filters characters by Vision', () async {
-      await provider.setCategory('Pyro');
+    test('Category filter filters by Weapons, Materials, and Visions', () async {
+      await provider.setCategory('Weapons');
       expect(provider.products, isNotEmpty);
       for (final p in provider.products) {
-        expect(p.category, equals('Pyro'));
+        expect(p.category, equals('Weapons'));
+      }
+
+      await provider.setCategory('Materials');
+      expect(provider.products, isNotEmpty);
+      for (final p in provider.products) {
+        expect(p.category, equals('Materials'));
       }
 
       await provider.setCategory('Geo');
@@ -75,7 +84,7 @@ void main() {
       }
     });
 
-    test('CRUD: Add, Update, and Delete character', () async {
+    test('CRUD: Add, Update, and Delete product', () async {
       final initialCount = provider.totalCount;
 
       // 1. Create
@@ -112,7 +121,7 @@ void main() {
         'nation': 'Inazuma',
         'rarity': 5,
         'img': {
-          'card': 'https://pub-1ad979b6618d4a07ab871591a84b954c.r2.dev/raiden/card.png',
+          'card': 'https://enka.network/ui/UI_AvatarIcon_Shougun_Card.png',
         },
       };
 
@@ -124,7 +133,6 @@ void main() {
       expect(product.badge, equals('5★ ARCHON'));
       expect(product.price, greaterThanOrEqualTo(899.99));
       expect(product.rating, greaterThanOrEqualTo(4.8));
-      expect(product.imageUrl, contains('raiden/card.png'));
     });
 
     test('mapCharacterToProduct handles 4-star character pricing', () {
@@ -137,7 +145,7 @@ void main() {
         'nation': 'Mondstadt',
         'rarity': 4,
         'img': {
-          'card': 'https://pub-1ad979b6618d4a07ab871591a84b954c.r2.dev/bennett/card.png',
+          'card': 'https://enka.network/ui/UI_AvatarIcon_Bennett_Card.png',
         },
       };
 

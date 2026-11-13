@@ -108,9 +108,13 @@ class SupabaseService {
           query = query.lte('price', maxPrice);
         }
 
-        // 2. Category (Vision) filter
+        // 2. Category (Vision or Type) filter
         if (category != null && category != 'All') {
-          query = query.eq('category', category);
+          if (category == 'Characters') {
+            query = query.filter('category', 'in', '("Pyro","Hydro","Anemo","Electro","Dendro","Cryo","Geo")');
+          } else {
+            query = query.eq('category', category);
+          }
         }
 
         // 3. Search query filter
@@ -149,7 +153,12 @@ class SupabaseService {
       filtered = filtered.where((p) => p.price <= maxPrice);
     }
     if (category != null && category != 'All') {
-      filtered = filtered.where((p) => p.category == category);
+      if (category == 'Characters') {
+        const visions = {'Pyro', 'Hydro', 'Anemo', 'Electro', 'Dendro', 'Cryo', 'Geo'};
+        filtered = filtered.where((p) => visions.contains(p.category));
+      } else {
+        filtered = filtered.where((p) => p.category == category);
+      }
     }
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       final q = searchQuery.trim().toLowerCase();

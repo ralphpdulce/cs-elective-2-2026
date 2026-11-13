@@ -61,6 +61,13 @@ class PaginationBar extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     onSelected: (_) => provider.setPageSize(8),
                   ),
+                  const SizedBox(width: 4),
+                  ChoiceChip(
+                    label: const Text('10', style: TextStyle(fontSize: 11)),
+                    selected: provider.pageSize == 10,
+                    visualDensity: VisualDensity.compact,
+                    onSelected: (_) => provider.setPageSize(10),
+                  ),
                 ],
               ),
             ],

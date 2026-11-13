@@ -18,7 +18,7 @@ class ProductProvider extends ChangeNotifier {
 
   // Pagination parameters
   int _currentPage = 1;
-  int _pageSize = 6; // Max 6-8 products per page as per guidelines
+  int _pageSize = 10; // Default 10 products per page
 
   // Filtering parameters
   String _selectedCategory = 'All';
@@ -197,9 +197,9 @@ class ProductProvider extends ChangeNotifier {
     }
   }
 
-  /// Toggle items per page between 6 and 8
+  /// Toggle items per page between 6, 8, and 10
   Future<void> setPageSize(int size) async {
-    if (size != 6 && size != 8) return;
+    if (size != 6 && size != 8 && size != 10) return;
     if (_pageSize == size) return;
     _pageSize = size;
     await loadProducts(resetPage: true);
