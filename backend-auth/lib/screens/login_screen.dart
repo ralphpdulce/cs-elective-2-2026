@@ -21,6 +21,80 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _handleProviderSignIn({
+    required String providerName,
+    required Future<bool> Function() liveCall,
+    required VoidCallback demoCall,
+  }) async {
+    final auth = context.read<AppAuthProvider>();
+    final isEnabled = await auth.isProviderEnabled(providerName);
+
+    if (!mounted) return;
+
+    if (!isEnabled) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.vpn_key_off_outlined, color: Colors.orange[800]),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('$providerName Not Enabled', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$providerName OAuth has not been toggled ON in your Supabase project dashboard (dfwoygvyymtdwepsjgtz).',
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'To enable live $providerName OAuth, add your Client ID & Secret in Supabase Dashboard -> Authentication -> Providers.',
+                  style: const TextStyle(fontSize: 11),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Would you like to sign in with the instant Demo account instead?',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.bolt, size: 16),
+              label: Text('Sign in as Demo ($providerName)'),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                demoCall();
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final success = await liveCall();
+    if (success && mounted) _onSuccess();
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AppAuthProvider>();
@@ -179,10 +253,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Continue with GitHub',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
-                          onPressed: () async {
-                            final success = await auth.signInWithGitHub();
-                            if (success && mounted) _onSuccess();
-                          },
+                          onPressed: () => _handleProviderSignIn(
+                            providerName: 'GitHub',
+                            liveCall: () => auth.signInWithGitHub(),
+                            demoCall: () {
+                              auth.signInDemo(
+                                provider: 'GitHub',
+                                name: 'Aether (Traveler)',
+                                email: 'aether@github.com',
+                              );
+                              _onSuccess();
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -208,10 +290,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Continue with Google',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
-                          onPressed: () async {
-                            final success = await auth.signInWithGoogle();
-                            if (success && mounted) _onSuccess();
-                          },
+                          onPressed: () => _handleProviderSignIn(
+                            providerName: 'Google',
+                            liveCall: () => auth.signInWithGoogle(),
+                            demoCall: () {
+                              auth.signInDemo(
+                                provider: 'Google',
+                                name: 'Lumine (Traveler)',
+                                email: 'lumine@gmail.com',
+                              );
+                              _onSuccess();
+                            },
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),

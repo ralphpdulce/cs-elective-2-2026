@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 
@@ -99,6 +101,23 @@ class AppAuthProvider extends ChangeNotifier {
       return provider[0].toUpperCase() + provider.substring(1);
     }
     return 'OAuth';
+  }
+
+  /// Checks whether an OAuth provider is actively enabled in the Supabase project
+  Future<bool> isProviderEnabled(String providerKey) async {
+    if (!SupabaseConfig.isConfigured) return false;
+    try {
+      final uri = Uri.parse('${SupabaseConfig.supabaseUrl}/auth/v1/settings');
+      final res = await http.get(uri, headers: {
+        'apikey': SupabaseConfig.supabaseAnonKey,
+      }).timeout(const Duration(seconds: 3));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body) as Map<String, dynamic>;
+        final external = data['external'] as Map<String, dynamic>?;
+        return external?[providerKey.toLowerCase()] == true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   /// Sign in with Supabase OAuth (GitHub, Google, etc.)
