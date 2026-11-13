@@ -89,7 +89,36 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+
+                    // Helpful Hint Callout
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, size: 18, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Tip: Live OAuth requires the provider toggled ON in your Supabase Dashboard. Use the Instant Demo buttons below to log in immediately without configuration!',
+                              style: TextStyle(
+                                fontSize: 11,
+                                height: 1.3,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
 
                     // Error Message Banner
                     if (auth.errorMessage != null) ...[
@@ -211,9 +240,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Instant Demo Login (GitHub)
                       SizedBox(
                         width: double.infinity,
-                        child: TextButton.icon(
-                          icon: const Icon(Icons.flash_on, size: 18),
-                          label: const Text('Sign in as Demo User (GitHub)'),
+                        height: 44,
+                        child: FilledButton.tonalIcon(
+                          icon: const Icon(Icons.bolt, size: 18),
+                          label: const Text('Instant Demo Sign In (GitHub)'),
                           onPressed: () {
                             auth.signInDemo(
                               provider: 'GitHub',
@@ -224,12 +254,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                       ),
+                      const SizedBox(height: 10),
                       // Instant Demo Login (Google)
                       SizedBox(
                         width: double.infinity,
-                        child: TextButton.icon(
-                          icon: const Icon(Icons.flash_on, size: 18),
-                          label: const Text('Sign in as Demo User (Google)'),
+                        height: 44,
+                        child: FilledButton.tonalIcon(
+                          icon: const Icon(Icons.bolt, size: 18),
+                          label: const Text('Instant Demo Sign In (Google)'),
                           onPressed: () {
                             auth.signInDemo(
                               provider: 'Google',

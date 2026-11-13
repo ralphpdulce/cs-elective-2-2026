@@ -43,13 +43,15 @@ class SupabaseService {
     }
   }
 
-  /// Auto-seed characters to Supabase if products table is currently empty
+  /// Auto-seed characters to Supabase if products table is empty or contains legacy non-character items
   Future<void> _autoSeedIfEmpty() async {
     if (!isConnected || _client == null) return;
     try {
-      final res = await _client!.from('products').select('id').limit(5);
-      if (res.isEmpty) {
-        debugPrint('[SupabaseService] Remote products table empty. Auto-seeding characters...');
+      final res = await _client!.from('products').select('id, category').limit(10);
+      const visions = {'Pyro', 'Hydro', 'Anemo', 'Electro', 'Dendro', 'Cryo', 'Geo'};
+      final hasCharacters = res.any((item) => visions.contains(item['category']));
+      if (res.isEmpty || !hasCharacters) {
+        debugPrint('[SupabaseService] Table empty or legacy products found. Auto-syncing characters...');
         await syncCharactersFromApi(force: true);
       }
     } catch (e) {

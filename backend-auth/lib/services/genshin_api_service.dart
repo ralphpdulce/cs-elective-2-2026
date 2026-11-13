@@ -137,3 +137,4 @@ class GenshinApiService {
     return hash;
   }
 }
+
