@@ -46,7 +46,7 @@ class _AdminProductDialogState extends State<AdminProductDialog> {
     final p = widget.product;
     _nameController = TextEditingController(text: p?.name ?? '');
     _priceController = TextEditingController(text: p != null ? p.price.toStringAsFixed(2) : '');
-    _imageController = TextEditingController(text: p?.imageUrl ?? 'https://pub-1ad979b6618d4a07ab871591a84b954c.r2.dev/zhongli/card.png');
+    _imageController = TextEditingController(text: p?.imageUrl ?? 'https://enka.network/ui/UI_AvatarIcon_Zhongli_Card.png');
     _ratingController = TextEditingController(text: p != null ? p.rating.toString() : '4.5');
     _badgeController = TextEditingController(text: p?.badge ?? '');
     _descController = TextEditingController(text: p?.description ?? '');

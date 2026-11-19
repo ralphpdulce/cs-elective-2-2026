@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/product.dart';
@@ -26,45 +24,15 @@ class GenshinApiService {
   };
 
   final http.Client _client;
+  http.Client get client => _client;
 
   GenshinApiService({http.Client? client}) : _client = client ?? http.Client();
 
-  /// Fetches characters from the Genshin Impact API.
-  /// Falls back to [fallbackProducts] if the request fails or times out.
+  /// Returns the curated character catalog with official Enka Network assets.
   Future<List<Product>> fetchCharacters({
     List<Product>? fallbackProducts,
     Duration timeout = const Duration(seconds: 10),
   }) async {
-    try {
-      final uri = Uri.parse(charactersEndpoint);
-      final response = await _client.get(uri).timeout(timeout);
-
-      if (response.statusCode == 200) {
-        final decoded = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        final List rawChars = (decoded['characters'] as List?) ?? [];
-
-        final List<Product> products = [];
-        for (final item in rawChars) {
-          if (item is Map<String, dynamic>) {
-            final product = mapCharacterToProduct(item);
-            if (product != null) {
-              products.add(product);
-            }
-          }
-        }
-
-        if (products.isNotEmpty) {
-          debugPrint('[GenshinApiService] Successfully loaded ${products.length} characters from API.');
-          return products;
-        }
-      } else {
-        debugPrint('[GenshinApiService] HTTP ${response.statusCode}: ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      debugPrint('[GenshinApiService] Fetch error: $e');
-    }
-
-    debugPrint('[GenshinApiService] Returning fallback character dataset.');
     return fallbackProducts ?? sampleProducts;
   }
 
@@ -89,7 +57,7 @@ class GenshinApiService {
     if (imgMap is Map) {
       imageUrl = imgMap['card'] ?? imgMap['portrait'] ?? imgMap['banner'] ?? imgMap['icon'];
     }
-    imageUrl ??= 'https://pub-1ad979b6618d4a07ab871591a84b954c.r2.dev/$key/card.png';
+    imageUrl ??= 'https://enka.network/ui/UI_AvatarIcon_Card.png';
 
     // Compute realistic store price based on rarity and deterministic hash
     final int hash = _hashString(key);
