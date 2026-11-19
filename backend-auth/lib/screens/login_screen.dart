@@ -21,78 +21,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _handleProviderSignIn({
-    required String providerName,
-    required Future<bool> Function() liveCall,
-    required VoidCallback demoCall,
-  }) async {
+  Future<void> _handleGoogleSignIn() async {
     final auth = context.read<AppAuthProvider>();
-    final isEnabled = await auth.isProviderEnabled(providerName);
-
-    if (!mounted) return;
-
-    if (!isEnabled) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
-            children: [
-              Icon(Icons.vpn_key_off_outlined, color: Colors.orange[800]),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text('$providerName Not Enabled', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '$providerName OAuth has not been toggled ON in your Supabase project dashboard (dfwoygvyymtdwepsjgtz).',
-                style: const TextStyle(fontSize: 13, height: 1.4),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'To enable live $providerName OAuth, add your Client ID & Secret in Supabase Dashboard -> Authentication -> Providers.',
-                  style: const TextStyle(fontSize: 11),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'Would you like to sign in with the instant Demo account instead?',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton.icon(
-              icon: const Icon(Icons.bolt, size: 16),
-              label: Text('Sign in as Demo ($providerName)'),
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                demoCall();
-              },
-            ),
-          ],
-        ),
-      );
-      return;
+    final success = await auth.signInWithGoogle();
+    if (success && mounted) {
+      _onSuccess();
     }
-
-    final success = await liveCall();
-    if (success && mounted) _onSuccess();
   }
 
   @override
@@ -155,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Sign in with your preferred third-party account to manage inventory, save favorites, and place orders.',
+                      'Sign in with your Google account to manage inventory, save favorites, and place orders.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -163,36 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // Helpful Hint Callout
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, size: 18, color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Tip: Live OAuth requires the provider toggled ON in your Supabase Dashboard. Use the Instant Demo buttons below to log in immediately without configuration!',
-                              style: TextStyle(
-                                fontSize: 11,
-                                height: 1.3,
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
                     // Error Message Banner
                     if (auth.errorMessage != null) ...[
@@ -207,8 +112,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.error_outline,
-                                color: Theme.of(context).colorScheme.error, size: 20),
+                            Icon(
+                              Icons.error_outline,
+                              color: Theme.of(context).colorScheme.error,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -222,57 +130,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                     ],
 
-                    // Loading Indicator
+                    // Loading Indicator or Google Sign-In Button
                     if (auth.isLoading) ...[
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
                       const Text(
-                        'Redirecting to provider authentication...',
-                        style: TextStyle(fontSize: 12),
+                        'Connecting to Google...',
+                        style: TextStyle(fontSize: 13),
                       ),
                       const SizedBox(height: 16),
                     ] else ...[
-                      // 1. GitHub Button
+                      // Continue with Google Button
                       SizedBox(
                         width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF24292E),
-                            foregroundColor: Colors.white,
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          icon: const _GitHubIcon(),
-                          label: const Text(
-                            'Continue with GitHub',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                          ),
-                          onPressed: () => _handleProviderSignIn(
-                            providerName: 'GitHub',
-                            liveCall: () => auth.signInWithGitHub(),
-                            demoCall: () {
-                              auth.signInDemo(
-                                provider: 'GitHub',
-                                name: 'Aether (Traveler)',
-                                email: 'aether@github.com',
-                              );
-                              _onSuccess();
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // 2. Google Button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
+                        height: 50,
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
                             backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
@@ -290,81 +164,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Continue with Google',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
-                          onPressed: () => _handleProviderSignIn(
-                            providerName: 'Google',
-                            liveCall: () => auth.signInWithGoogle(),
-                            demoCall: () {
-                              auth.signInDemo(
-                                provider: 'Google',
-                                name: 'Lumine (Traveler)',
-                                email: 'lumine@gmail.com',
-                              );
-                              _onSuccess();
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Divider
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.grey.withValues(alpha: 0.3))),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text(
-                              'OR FOR TESTING',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                          Expanded(child: Divider(color: Colors.grey.withValues(alpha: 0.3))),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Instant Demo Login (GitHub)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 44,
-                        child: FilledButton.tonalIcon(
-                          icon: const Icon(Icons.bolt, size: 18),
-                          label: const Text('Instant Demo Sign In (GitHub)'),
-                          onPressed: () {
-                            auth.signInDemo(
-                              provider: 'GitHub',
-                              name: 'Aether (Traveler)',
-                              email: 'aether@github.com',
-                            );
-                            _onSuccess();
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      // Instant Demo Login (Google)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 44,
-                        child: FilledButton.tonalIcon(
-                          icon: const Icon(Icons.bolt, size: 18),
-                          label: const Text('Instant Demo Sign In (Google)'),
-                          onPressed: () {
-                            auth.signInDemo(
-                              provider: 'Google',
-                              name: 'Lumine (Traveler)',
-                              email: 'lumine@gmail.com',
-                            );
-                            _onSuccess();
-                          },
+                          onPressed: _handleGoogleSignIn,
                         ),
                       ),
                     ],
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     TextButton(
                       onPressed: () => context.go('/'),
                       child: const Text('Continue as Guest'),
@@ -380,38 +185,23 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class _GitHubIcon extends StatelessWidget {
-  const _GitHubIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22,
-      height: 22,
-      alignment: Alignment.center,
-      child: const Icon(Icons.code, color: Colors.white, size: 20),
-    );
-  }
-}
-
 class _GoogleIcon extends StatelessWidget {
   const _GoogleIcon();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 22,
-      height: 22,
+      width: 24,
+      height: 24,
       alignment: Alignment.center,
       child: const Text(
         'G',
         style: TextStyle(
           color: Color(0xFF4285F4),
           fontWeight: FontWeight.bold,
-          fontSize: 19,
+          fontSize: 20,
         ),
       ),
     );
   }
 }
-

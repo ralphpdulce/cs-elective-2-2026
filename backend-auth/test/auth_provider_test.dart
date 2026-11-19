@@ -16,20 +16,7 @@ void main() {
       expect(auth.isLoading, isFalse);
     });
 
-    test('Demo GitHub Sign-in authenticates and sets provider', () {
-      auth.signInDemo(
-        provider: 'GitHub',
-        name: 'Aether (Traveler)',
-        email: 'aether@github.com',
-      );
-
-      expect(auth.isAuthenticated, isTrue);
-      expect(auth.displayName, equals('Aether (Traveler)'));
-      expect(auth.email, equals('aether@github.com'));
-      expect(auth.providerName, equals('GitHub'));
-    });
-
-    test('Demo Google Sign-in authenticates and sets provider', () {
+    test('Google Sign-in simulation authenticates and sets provider', () {
       auth.signInDemo(
         provider: 'Google',
         name: 'Lumine (Traveler)',
@@ -44,9 +31,9 @@ void main() {
 
     test('Sign out clears user session', () async {
       auth.signInDemo(
-        provider: 'GitHub',
-        name: 'Aether',
-        email: 'aether@github.com',
+        provider: 'Google',
+        name: 'Lumine',
+        email: 'lumine@gmail.com',
       );
       expect(auth.isAuthenticated, isTrue);
 
@@ -56,4 +43,3 @@ void main() {
     });
   });
 }
-

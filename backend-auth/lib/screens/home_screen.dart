@@ -307,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: const Icon(Icons.login),
                 title: const Text('Sign In'),
-                subtitle: const Text('Connect via GitHub or Google'),
+                subtitle: const Text('Connect via Google'),
                 onTap: () {
                   Navigator.pop(context);
                   context.push('/login');

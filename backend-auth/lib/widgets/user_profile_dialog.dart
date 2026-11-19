@@ -73,9 +73,7 @@ class UserProfileDialog extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  auth.providerName.toLowerCase().contains('git')
-                      ? Icons.code
-                      : Icons.verified_user,
+                  Icons.verified_user,
                   size: 16,
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),

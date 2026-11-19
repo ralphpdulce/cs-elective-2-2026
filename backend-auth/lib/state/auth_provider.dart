@@ -120,11 +120,11 @@ class AppAuthProvider extends ChangeNotifier {
     return false;
   }
 
-  /// Sign in with Supabase OAuth (GitHub, Google, etc.)
+  /// Sign in with Supabase OAuth (Google)
   Future<bool> signInWithOAuth(OAuthProvider provider) async {
     final client = _client;
     if (client == null || !SupabaseConfig.isConfigured) {
-      _errorMessage = 'Supabase client is not connected. Use Demo login.';
+      _errorMessage = 'Supabase client is not configured. Please check your credentials.';
       notifyListeners();
       return false;
     }
@@ -134,7 +134,7 @@ class AppAuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final redirectUrl = kIsWeb ? null : SupabaseConfig.authRedirectUri;
+      final redirectUrl = kIsWeb ? Uri.base.origin : SupabaseConfig.authRedirectUri;
       final result = await client.auth.signInWithOAuth(
         provider,
         redirectTo: redirectUrl,
@@ -142,6 +142,11 @@ class AppAuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return result;
+    } on AuthException catch (e) {
+      _isLoading = false;
+      _errorMessage = e.message;
+      notifyListeners();
+      return false;
     } catch (e) {
       _isLoading = false;
       _errorMessage = 'OAuth login failed: $e';
@@ -150,17 +155,15 @@ class AppAuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Convenience method for GitHub Sign-in
-  Future<bool> signInWithGitHub() => signInWithOAuth(OAuthProvider.github);
-
   /// Convenience method for Google Sign-in
   Future<bool> signInWithGoogle() => signInWithOAuth(OAuthProvider.google);
 
-  /// Demo / Offline login simulation for test environments and graders
+  /// Test helper for unit test environments
+  @visibleForTesting
   void signInDemo({
     required String provider,
-    String name = 'Lumine (Demo)',
-    String email = 'traveler@genshin.teyvat',
+    String name = 'Lumine',
+    String email = 'lumine@gmail.com',
     String? avatarUrl,
   }) {
     _demoUser = DemoUser(
