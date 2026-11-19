@@ -7,6 +7,7 @@ import 'genshin_api_service.dart';
 
 class SupabaseService {
   final GenshinApiService _apiService;
+  GenshinApiService get apiService => _apiService;
   SupabaseClient? _client;
   bool _isInitialized = false;
 
@@ -43,15 +44,13 @@ class SupabaseService {
     }
   }
 
-  /// Auto-seed characters to Supabase if products table is empty or contains legacy non-character items
+  /// Auto-seed curated catalog to Supabase if products table is empty
   Future<void> _autoSeedIfEmpty() async {
     if (!isConnected || _client == null) return;
     try {
       final res = await _client!.from('products').select('id, category').limit(10);
-      const visions = {'Pyro', 'Hydro', 'Anemo', 'Electro', 'Dendro', 'Cryo', 'Geo'};
-      final hasCharacters = res.any((item) => visions.contains(item['category']));
-      if (res.isEmpty || !hasCharacters) {
-        debugPrint('[SupabaseService] Table empty or legacy products found. Auto-syncing characters...');
+      if (res.isEmpty) {
+        debugPrint('[SupabaseService] Table empty. Auto-seeding curated catalog...');
         await syncCharactersFromApi(force: true);
       }
     } catch (e) {
@@ -59,10 +58,9 @@ class SupabaseService {
     }
   }
 
-  /// Syncs characters fetched from the Genshin Impact API into Supabase (and local cache).
+  /// Syncs curated catalog into Supabase (and local cache).
   Future<int> syncCharactersFromApi({bool force = false}) async {
-    debugPrint('[SupabaseService] Fetching characters from Genshin Impact API...');
-    final characters = await _apiService.fetchCharacters(fallbackProducts: sampleProducts);
+    final characters = sampleProducts;
 
     if (characters.isNotEmpty) {
       _localProducts.clear();
@@ -70,14 +68,14 @@ class SupabaseService {
 
       if (isConnected && _client != null) {
         try {
-          debugPrint('[SupabaseService] Upserting ${characters.length} characters into Supabase products table...');
+          debugPrint('[SupabaseService] Upserting ${characters.length} curated products into Supabase products table...');
           // Upsert in batches of 25 to respect payload sizes
           for (int i = 0; i < characters.length; i += 25) {
             final int end = (i + 25 < characters.length) ? i + 25 : characters.length;
             final batch = characters.sublist(i, end).map((p) => p.toMap()).toList();
             await _client!.from('products').upsert(batch);
           }
-          debugPrint('[SupabaseService] Successfully synced ${characters.length} characters into Supabase!');
+          debugPrint('[SupabaseService] Successfully synced ${characters.length} products into Supabase!');
         } catch (e) {
           debugPrint('[SupabaseService] Remote Supabase upsert error: $e');
         }

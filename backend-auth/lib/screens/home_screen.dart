@@ -326,35 +326,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const Divider(),
             ListTile(
-              leading: provider.isSyncing
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.sync),
-              title: const Text('Sync API Characters'),
-              subtitle: const Text('Fetch latest characters to Supabase'),
-              onTap: provider.isSyncing
-                  ? null
-                  : () async {
-                      Navigator.pop(context);
-                      final count = await provider.syncFromGenshinApi();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              count > 0
-                                  ? 'Synced $count characters from Genshin Impact API!'
-                                  : 'Character sync completed.',
-                            ),
-                            duration: const Duration(seconds: 3),
-                          ),
-                        );
-                      }
-                    },
-            ),
-            ListTile(
               leading: const Icon(Icons.auto_awesome_outlined),
               title: const Text('API Courtesy & Credits'),
               subtitle: const Text('devesh-anand/genshin-api'),
@@ -379,65 +350,6 @@ class _HomeScreenState extends State<HomeScreen> {
             onRefresh: () => provider.loadProducts(),
             child: CustomScrollView(
               slivers: [
-            // Backend status banner
-            SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                color: provider.isConnectedToSupabase
-                    ? Colors.green.withValues(alpha: 0.15)
-                    : Colors.amber.withValues(alpha: 0.15),
-                child: Row(
-                  children: [
-                    Icon(
-                      provider.isConnectedToSupabase
-                          ? Icons.cloud_done
-                          : Icons.cloud_off,
-                      size: 16,
-                      color: provider.isConnectedToSupabase
-                          ? Colors.green
-                          : Colors.amber[800],
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        provider.isConnectedToSupabase
-                            ? 'Connected to Supabase • ${auth.isAuthenticated ? "Auth: ${auth.displayName}" : "Guest Mode"} • API: devesh-anand'
-                            : 'Running local cache • ${auth.isAuthenticated ? "Auth: ${auth.displayName}" : "Guest Mode"} • API: devesh-anand',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: provider.isConnectedToSupabase
-                              ? Colors.green[800]
-                              : Colors.amber[900],
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (provider.isSyncing)
-                      const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    else
-                      InkWell(
-                        onTap: () => _showCreditsDialog(context),
-                        child: Text(
-                          'API Credits',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
             // Search Bar
             SliverToBoxAdapter(
               child: Padding(
