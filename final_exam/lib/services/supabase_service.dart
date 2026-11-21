@@ -32,6 +32,13 @@ class SupabaseService {
   SupabaseService({SupabaseClient? client, this.forceLocal = false}) : _client = client {
     if (client != null) {
       _isInitialized = true;
+    } else if (!forceLocal && SupabaseConfig.isConfigured) {
+      try {
+        _client = Supabase.instance.client;
+        _isInitialized = true;
+      } catch (_) {
+        _isInitialized = false;
+      }
     }
   }
 

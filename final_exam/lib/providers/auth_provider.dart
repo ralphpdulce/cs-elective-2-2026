@@ -181,8 +181,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(isLoading: false, errorMessage: 'Google sign-in was canceled.');
         return false;
       }
-      // Listener will pick up session or fallback
-      if (!_service.isConnected) {
+      // Listener will pick up session; in live mode, reset loading so UI is responsive
+      if (_service.isConnected) {
+        state = state.copyWith(isLoading: false);
+      } else {
         state = state.copyWith(
           isLoading: false,
           clearError: true,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/supabase_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? redirectPath;
@@ -84,7 +85,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
   Future<void> _handleGoogleSignIn() async {
     final success = await ref.read(authProvider.notifier).signInWithGoogle();
     if (success && mounted) {
-      _onAuthSuccess();
+      // If offline / local fallback mode, route immediately.
+      // In live OAuth, the deep-link redirect listener routes on session callback.
+      if (!ref.read(supabaseServiceProvider).isConnected) {
+        _onAuthSuccess();
+      }
     }
   }
 
