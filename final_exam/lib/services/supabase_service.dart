@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -427,6 +428,33 @@ class SupabaseService {
       }
     }
     _localProducts.removeWhere((p) => p.id == id);
+  }
+
+  /// Upload product image bytes to Supabase Storage 'product-images' bucket
+  Future<String?> uploadProductImage({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    if (isConnected) {
+      try {
+        final cleanName = fileName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+        final path = 'products/${DateTime.now().millisecondsSinceEpoch}_$cleanName';
+        await _client!.storage.from('product-images').uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: true),
+        );
+        return _client!.storage.from('product-images').getPublicUrl(path);
+      } catch (e) {
+        debugPrint('[SupabaseService] uploadProductImage storage notice: $e');
+        // Fallback to base64 data URI so user image is retained
+        final base64Str = base64Encode(bytes);
+        return 'data:image/png;base64,$base64Str';
+      }
+    }
+
+    final base64Str = base64Encode(bytes);
+    return 'data:image/png;base64,$base64Str';
   }
 
   /// Get price bounds for the price range slider

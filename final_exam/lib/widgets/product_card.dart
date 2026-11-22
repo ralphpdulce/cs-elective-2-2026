@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +32,22 @@ class ProductCard extends ConsumerWidget {
           child: const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
         ),
       );
+    }
+
+    if (url.startsWith('data:image')) {
+      try {
+        final commaIdx = url.indexOf(',');
+        final base64Str = commaIdx >= 0 ? url.substring(commaIdx + 1) : url;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: Colors.grey.withValues(alpha: 0.15),
+            child: const Center(child: Icon(Icons.broken_image, size: 40, color: Colors.grey)),
+          ),
+        );
+      } catch (_) {}
     }
 
     return Image.network(

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,6 +30,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     }
     if (url.startsWith('assets/')) {
       return Image.asset(url, fit: BoxFit.contain);
+    }
+    if (url.startsWith('data:image')) {
+      try {
+        final commaIdx = url.indexOf(',');
+        final base64Str = commaIdx >= 0 ? url.substring(commaIdx + 1) : url;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(bytes, fit: BoxFit.contain);
+      } catch (_) {}
     }
     return Image.network(
       url,
