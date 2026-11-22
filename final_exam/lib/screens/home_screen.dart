@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/product_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/pagination_bar.dart';
 import '../widgets/price_slider_filter.dart';
 import '../widgets/product_card.dart';
@@ -114,6 +115,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
               ],
             ),
+          // Theme Toggle
+          IconButton(
+            icon: Icon(theme.brightness == Brightness.dark ? Icons.light_mode : Icons.dark_mode),
+            tooltip: theme.brightness == Brightness.dark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+            onPressed: () => ref.read(themeProvider.notifier).toggleTheme(theme.brightness == Brightness.dark),
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -200,6 +207,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
 
             const Divider(),
+            ListTile(
+              leading: Icon(theme.brightness == Brightness.dark ? Icons.light_mode : Icons.dark_mode),
+              title: Text(theme.brightness == Brightness.dark ? 'Light Mode' : 'Dark Mode'),
+              trailing: Switch(
+                value: theme.brightness == Brightness.dark,
+                onChanged: (_) => ref.read(themeProvider.notifier).toggleTheme(theme.brightness == Brightness.dark),
+              ),
+              onTap: () => ref.read(themeProvider.notifier).toggleTheme(theme.brightness == Brightness.dark),
+            ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text('Sign Out', style: TextStyle(color: Colors.red)),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Product {
   final int id;
   final String name;
@@ -56,13 +58,21 @@ class Product {
   }
 
   Map<String, dynamic> toMap({bool includeId = true}) {
+    // Embed metadata tag into description so rating and badge are persisted cleanly in PostgreSQL
+    final meta = <String, dynamic>{
+      'rating': rating,
+      if (badge != null && badge!.isNotEmpty) 'badge': badge,
+    };
+    final cleanDesc = description.replaceAll(RegExp(r'\n?<!--meta:.*?-->'), '').trim();
+    final encodedDesc = '$cleanDesc\n<!--meta:${jsonEncode(meta)}-->';
+
     final map = <String, dynamic>{
       'name': name,
       'price': price,
       'stock': stock,
       'category_id': categoryId,
       'image_url': imageUrl,
-      'description': description,
+      'description': encodedDesc,
     };
     if (includeId && id > 0) {
       map['id'] = id;
@@ -93,6 +103,35 @@ class Product {
       catName = categoriesData['name'] as String;
     }
 
+    double parsedRating = 4.8;
+    String? parsedBadge = map['badge'] as String?;
+    String cleanDesc = (map['description'] ?? 'Item available in Paimon\'s Bargains.') as String;
+
+    if (map['rating'] != null) {
+      parsedRating = (map['rating'] as num).toDouble();
+    }
+
+    // Extract embedded metadata from description comment if present
+    final metaRegex = RegExp(r'\n?<!--meta:(.*?)-->');
+    final match = metaRegex.firstMatch(cleanDesc);
+    if (match != null) {
+      try {
+        final jsonStr = match.group(1);
+        if (jsonStr != null) {
+          final decoded = jsonDecode(jsonStr);
+          if (decoded is Map) {
+            if (map['rating'] == null && decoded['rating'] != null) {
+              parsedRating = (decoded['rating'] as num).toDouble();
+            }
+            if (parsedBadge == null && decoded['badge'] != null) {
+              parsedBadge = decoded['badge'].toString();
+            }
+          }
+        }
+      } catch (_) {}
+      cleanDesc = cleanDesc.replaceAll(metaRegex, '').trim();
+    }
+
     return Product(
       id: parsedId,
       name: (map['name'] ?? '') as String,
@@ -101,9 +140,9 @@ class Product {
       categoryId: parsedCatId,
       categoryName: catName ?? 'General',
       imageUrl: (map['image_url'] ?? map['imageUrl']) as String?,
-      rating: (map['rating'] as num?)?.toDouble() ?? 4.8,
-      badge: map['badge'] as String?,
-      description: (map['description'] ?? 'Item available in Paimon\'s Bargains.') as String,
+      rating: parsedRating,
+      badge: parsedBadge,
+      description: cleanDesc,
       createdAt: map['created_at'] != null ? DateTime.tryParse(map['created_at'].toString()) : null,
     );
   }

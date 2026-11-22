@@ -496,7 +496,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            isEditing ? 'Modify Product Specifications' : 'Add Product to Supabase Catalog',
+                            isEditing ? 'Edit Product' : 'Add Product',
                             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -661,7 +661,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                                 )
                               : const Icon(Icons.save),
                           label: Text(
-                            isEditing ? 'Save Changes' : 'Create Product',
+                            isEditing ? 'Save Changes' : 'Add Product',
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                         ),

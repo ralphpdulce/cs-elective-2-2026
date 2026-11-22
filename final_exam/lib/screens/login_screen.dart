@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/supabase_provider.dart';
+import '../providers/theme_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final String? redirectPath;
@@ -114,6 +115,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Theme Mode Toggle
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: IconButton(
+                          icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+                          tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                          onPressed: () => ref.read(themeProvider.notifier).toggleTheme(isDark),
+                        ),
+                      ),
+
                       // Store Logo & Header
                       Container(
                         width: 72,
