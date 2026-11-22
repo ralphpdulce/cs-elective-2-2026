@@ -12,11 +12,20 @@ void main() async {
   // Initialize live Supabase client if configured
   if (SupabaseConfig.isConfigured) {
     try {
+      try {
+        final existingClient = Supabase.instance.client;
+        if (!existingClient.rest.url.contains(SupabaseConfig.supabaseUrl)) {
+          debugPrint('[Supabase] Config mismatch: disposing stale client...');
+          await Supabase.instance.dispose();
+        }
+      } catch (_) {}
+
       await Supabase.initialize(
         url: SupabaseConfig.supabaseUrl,
         // ignore: deprecated_member_use
         anonKey: SupabaseConfig.supabaseAnonKey,
       );
+      debugPrint('[Supabase] Connected to live project.');
     } catch (e) {
       debugPrint('[Supabase] Init notice: $e');
     }

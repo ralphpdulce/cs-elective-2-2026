@@ -9,8 +9,6 @@ import '../models/profile.dart';
 
 class SupabaseService {
   final bool forceLocal;
-  SupabaseClient? _client;
-  bool _isInitialized = false;
 
   // In-memory fallback simulation dataset for offline & test environments
   final List<Product> _localProducts = List.from(sampleFinalExamProducts);
@@ -29,20 +27,29 @@ class SupabaseService {
   final List<Order> _localOrders = [];
   Profile? _localProfile;
 
-  SupabaseService({SupabaseClient? client, this.forceLocal = false}) : _client = client {
-    if (client != null) {
-      _isInitialized = true;
-    } else if (!forceLocal && SupabaseConfig.isConfigured) {
+  final SupabaseClient? _injectedClient;
+
+  SupabaseService({SupabaseClient? client, this.forceLocal = false}) : _injectedClient = client;
+
+  SupabaseClient? get _client {
+    if (!forceLocal && SupabaseConfig.isConfigured) {
       try {
-        _client = Supabase.instance.client;
-        _isInitialized = true;
-      } catch (_) {
-        _isInitialized = false;
-      }
+        return Supabase.instance.client;
+      } catch (_) {}
+    }
+    return _injectedClient;
+  }
+
+  bool get isConnected {
+    if (forceLocal || !SupabaseConfig.isConfigured) return false;
+    try {
+      final c = _client;
+      return c != null && c.rest.url.contains(SupabaseConfig.supabaseUrl);
+    } catch (_) {
+      return false;
     }
   }
 
-  bool get isConnected => !forceLocal && _isInitialized && SupabaseConfig.isConfigured && _client != null;
   SupabaseClient? get client => _client;
 
   /// Initialize Supabase
@@ -54,20 +61,20 @@ class SupabaseService {
 
     try {
       try {
-        _client = Supabase.instance.client;
-      } catch (_) {
-        await Supabase.initialize(
-          url: SupabaseConfig.supabaseUrl,
-          // ignore: deprecated_member_use
-          anonKey: SupabaseConfig.supabaseAnonKey,
-        );
-        _client = Supabase.instance.client;
-      }
-      _isInitialized = true;
-      debugPrint('[SupabaseService] Successfully connected to Supabase.');
+        final existing = Supabase.instance.client;
+        if (!existing.rest.url.contains(SupabaseConfig.supabaseUrl)) {
+          await Supabase.instance.dispose();
+        }
+      } catch (_) {}
+
+      await Supabase.initialize(
+        url: SupabaseConfig.supabaseUrl,
+        // ignore: deprecated_member_use
+        anonKey: SupabaseConfig.supabaseAnonKey,
+      );
+      debugPrint('[SupabaseService] Successfully connected.');
     } catch (e) {
-      debugPrint('[SupabaseService] Supabase init notice: $e. Using local fallback.');
-      _isInitialized = false;
+      debugPrint('[SupabaseService] Supabase init notice: $e.');
     }
   }
 
@@ -316,7 +323,7 @@ class SupabaseService {
         final products = data
             .map((item) => Product.fromMap(Map<String, dynamic>.from(item)))
             .toList();
-        final count = response.count;
+        final int count = response.count;
 
         return (products: products, totalCount: count);
       } catch (e) {
