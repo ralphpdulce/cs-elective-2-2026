@@ -424,9 +424,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                     ),
                                     icon: const Icon(Icons.person, size: 14),
                                     label: const Text('Customer', style: TextStyle(fontSize: 11)),
-                                    onPressed: () {
-                                      ref.read(authProvider.notifier).setDemoCustomer();
-                                      _onAuthSuccess();
+                                    onPressed: () async {
+                                      if (ref.read(supabaseServiceProvider).isConnected) {
+                                        _signInEmailController.text = 'demo.customer@paimon.com';
+                                        _signInPasswordController.text = 'PaimonCustomer123!';
+                                        await _handleSignIn();
+                                      } else {
+                                        ref.read(authProvider.notifier).setDemoCustomer();
+                                        _onAuthSuccess();
+                                      }
                                     },
                                   ),
                                 ),
@@ -439,9 +445,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                                     ),
                                     icon: const Icon(Icons.admin_panel_settings, size: 14),
                                     label: const Text('Admin', style: TextStyle(fontSize: 11)),
-                                    onPressed: () {
-                                      ref.read(authProvider.notifier).setDemoAdmin();
-                                      _onAuthSuccess();
+                                    onPressed: () async {
+                                      if (ref.read(supabaseServiceProvider).isConnected) {
+                                        _signInEmailController.text = 'demo.admin@paimon.com';
+                                        _signInPasswordController.text = 'PaimonAdmin123!';
+                                        await _handleSignIn();
+                                      } else {
+                                        ref.read(authProvider.notifier).setDemoAdmin();
+                                        _onAuthSuccess();
+                                      }
                                     },
                                   ),
                                 ),

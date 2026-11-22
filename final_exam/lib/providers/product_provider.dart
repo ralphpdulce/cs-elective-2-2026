@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/product.dart';
 import '../services/supabase_service.dart';
+import 'auth_provider.dart';
 import 'supabase_provider.dart';
 
 class ProductState {
@@ -260,5 +261,6 @@ class ProductNotifier extends StateNotifier<ProductState> {
 
 final productProvider = StateNotifierProvider<ProductNotifier, ProductState>((ref) {
   final service = ref.watch(supabaseServiceProvider);
+  ref.watch(authProvider);
   return ProductNotifier(service);
 });
