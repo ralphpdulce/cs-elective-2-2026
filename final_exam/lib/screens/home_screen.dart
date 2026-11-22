@@ -39,7 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Paimon's Bargains",
+          "PAIMON'S BARGAINS",
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
         actions: [

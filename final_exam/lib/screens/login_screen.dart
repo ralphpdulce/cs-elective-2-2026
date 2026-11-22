@@ -141,8 +141,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        "Paimon's Bargains",
-                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                        "PAIMON'S BARGAINS",
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, letterSpacing: 1.0),
                       ),
                       const SizedBox(height: 4),
                       Text(
