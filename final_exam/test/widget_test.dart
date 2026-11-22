@@ -26,7 +26,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify Auth Gate presents Sign In
-    expect(find.text("PAIMON'S BARGAINS"), findsWidgets);
+    expect(find.text("Paimon's Bargains"), findsWidgets);
     expect(find.text('Sign In'), findsWidgets);
     expect(find.text('Create Account'), findsWidgets);
     expect(find.text('Continue with Google'), findsOneWidget);
