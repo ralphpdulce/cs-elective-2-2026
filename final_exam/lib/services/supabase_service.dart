@@ -299,10 +299,14 @@ class SupabaseService {
         if (categoryId != null && categoryId > 0) {
           query = query.eq('category_id', categoryId);
         } else if (category != null && category != 'All') {
-          // Find matching category ID from list
-          final catObj = _localCategories.where((c) => c.name.toLowerCase() == category.toLowerCase()).firstOrNull;
-          if (catObj != null) {
-            query = query.eq('category_id', catObj.id);
+          if (category.toLowerCase() == 'characters') {
+            query = query.inFilter('category_id', [1, 4, 5, 6, 7, 8, 9, 10]);
+          } else {
+            // Find matching category ID from list
+            final catObj = _localCategories.where((c) => c.name.toLowerCase() == category.toLowerCase()).firstOrNull;
+            if (catObj != null) {
+              query = query.eq('category_id', catObj.id);
+            }
           }
         }
 
@@ -344,9 +348,16 @@ class SupabaseService {
     if (categoryId != null && categoryId > 0) {
       filtered = filtered.where((p) => p.categoryId == categoryId);
     } else if (category != null && category != 'All') {
-      filtered = filtered.where((p) =>
-          p.categoryName?.toLowerCase() == category.toLowerCase() ||
-          p.badge?.toLowerCase().contains(category.toLowerCase()) == true);
+      if (category.toLowerCase() == 'characters') {
+        filtered = filtered.where((p) =>
+            p.categoryId == 1 ||
+            (p.categoryId != null && p.categoryId! >= 4 && p.categoryId! <= 10) ||
+            p.categoryName?.toLowerCase() == 'characters');
+      } else {
+        filtered = filtered.where((p) =>
+            p.categoryName?.toLowerCase() == category.toLowerCase() ||
+            p.badge?.toLowerCase().contains(category.toLowerCase()) == true);
+      }
     }
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       final q = searchQuery.trim().toLowerCase();
