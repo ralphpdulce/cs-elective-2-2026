@@ -570,11 +570,43 @@ class SupabaseService {
       try {
         final res = await _client!
             .from('orders')
-            .select('*, order_items(*), profiles(email, firstname, lastname)')
+            .select('*, order_items(*)')
             .order('created_at', ascending: false);
 
         final List list = res as List;
-        return list.map((o) => Order.fromMap(Map<String, dynamic>.from(o))).toList();
+
+        final userIds = list
+            .map((o) => o['user_id']?.toString())
+            .whereType<String>()
+            .where((id) => id.isNotEmpty)
+            .toSet()
+            .toList();
+
+        final Map<String, Map<String, dynamic>> profilesMap = {};
+        if (userIds.isNotEmpty) {
+          try {
+            final profilesRes = await _client!
+                .from('profiles')
+                .select('id, email, firstname, lastname')
+                .filter('id', 'in', userIds);
+            for (final p in (profilesRes as List)) {
+              if (p is Map && p['id'] != null) {
+                profilesMap[p['id'].toString()] = Map<String, dynamic>.from(p);
+              }
+            }
+          } catch (e) {
+            debugPrint('[SupabaseService] profiles fetch for orders notice: $e');
+          }
+        }
+
+        return list.map((o) {
+          final map = Map<String, dynamic>.from(o as Map);
+          final uid = map['user_id']?.toString();
+          if (uid != null && profilesMap.containsKey(uid)) {
+            map['profiles'] = profilesMap[uid];
+          }
+          return Order.fromMap(map);
+        }).toList();
       } catch (e) {
         debugPrint('[SupabaseService] getAllOrders error: $e');
       }

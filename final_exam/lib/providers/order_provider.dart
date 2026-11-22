@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/order.dart';
 import '../services/supabase_service.dart';
+import 'auth_provider.dart';
 import 'cart_provider.dart';
 import 'product_provider.dart';
 import 'supabase_provider.dart';
@@ -30,6 +31,7 @@ class CustomerOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
 
 final customerOrdersProvider =
     StateNotifierProvider<CustomerOrdersNotifier, AsyncValue<List<Order>>>((ref) {
+  ref.watch(authProvider);
   final service = ref.watch(supabaseServiceProvider);
   return CustomerOrdersNotifier(service);
 });
@@ -68,6 +70,7 @@ class AdminOrdersNotifier extends StateNotifier<AsyncValue<List<Order>>> {
 
 final adminOrdersProvider =
     StateNotifierProvider<AdminOrdersNotifier, AsyncValue<List<Order>>>((ref) {
+  ref.watch(authProvider);
   final service = ref.watch(supabaseServiceProvider);
   return AdminOrdersNotifier(service);
 });
