@@ -508,7 +508,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                         controller: _nameController,
                         decoration: const InputDecoration(
                           labelText: 'Product Name *',
-                          hintText: 'e.g. Zhongli, Mistsplitter Reforged',
+                          hintText: 'e.g. Zhongli, Mistsplitter Reforged, Shivada Jade',
                           prefixIcon: Icon(Icons.shopping_bag_outlined),
                         ),
                         validator: (val) {
@@ -623,7 +623,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                               controller: _badgeController,
                               decoration: const InputDecoration(
                                 labelText: 'Badge (Optional)',
-                                hintText: 'e.g. 5★ ARCHON',
+                                hintText: 'e.g. 5★ SWORD, 4★ BOW, or leave blank',
                               ),
                             ),
                           ),
