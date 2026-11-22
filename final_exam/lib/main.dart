@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_theme.dart';
 import 'config/supabase_config.dart';
+import 'providers/theme_provider.dart';
 import 'router/app_router.dart';
 
 void main() async {
@@ -44,6 +45,7 @@ class FinalExamEcommerceApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
+    final themeMode = ref.watch(themeProvider);
 
     return MaterialApp.router(
       title: "Paimon's Bargains - Final Exam",
@@ -51,7 +53,7 @@ class FinalExamEcommerceApp extends ConsumerWidget {
       routerConfig: router,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeMode,
     );
   }
 }
