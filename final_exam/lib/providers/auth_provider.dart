@@ -73,6 +73,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final session = event.session;
         if (session != null) {
           final profile = await _service.getProfile(session.user.id);
+          final meta = session.user.userMetadata ?? {};
+          final fullName = (meta['full_name'] ?? meta['name'] ?? '').toString().trim();
+          final parts = fullName.isNotEmpty ? fullName.split(' ') : <String>[];
+          final first = (meta['firstname'] ?? (parts.isNotEmpty ? parts.first : '')).toString();
+          final last = (meta['lastname'] ?? (parts.length > 1 ? parts.sublist(1).join(' ') : '')).toString();
+
           state = state.copyWith(
             isLoading: false,
             clearError: true,
@@ -81,8 +87,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
                 Profile(
                   id: session.user.id,
                   email: session.user.email ?? '',
-                  firstname: session.user.userMetadata?['firstname'] ?? '',
-                  lastname: session.user.userMetadata?['lastname'] ?? '',
+                  firstname: first.isNotEmpty ? first : (session.user.email?.split('@').first ?? 'Traveler'),
+                  lastname: last,
                   roleId: 1,
                   roleName: 'customer',
                 ),
@@ -113,6 +119,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
 
       final user = res?.user ?? _service.currentUser;
+      if (user == null && !_service.forceLocal) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Sign up failed. Please check your information and try again.',
+        );
+        return false;
+      }
+
+      // If Supabase project has email confirmation enabled, inform the user
+      if (res != null && res.session == null && !_service.forceLocal) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Account created! Please check your email inbox to verify your account before logging in.',
+        );
+        return false;
+      }
+
       Profile? profile;
       if (user != null) {
         profile = await _service.getProfile(user.id);
@@ -133,6 +156,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         profile: profile,
       );
       return true;
+    } on supa.AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return false;
@@ -148,6 +174,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final res = await _service.signInWithEmail(email: email, password: password);
       final user = res?.user ?? _service.currentUser;
+
+      if (user == null && !_service.forceLocal) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Invalid login credentials. Please check your email and password.',
+        );
+        return false;
+      }
+
       Profile? profile;
       if (user != null) {
         profile = await _service.getProfile(user.id);
@@ -155,6 +190,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       profile ??= Profile(
         id: user?.id ?? 'user-1',
         email: email,
+        firstname: email.split('@').first,
+        lastname: '',
         roleId: email.contains('admin') ? 2 : 1,
         roleName: email.contains('admin') ? 'admin' : 'customer',
       );
@@ -166,6 +203,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         profile: profile,
       );
       return true;
+    } on supa.AuthException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       return false;

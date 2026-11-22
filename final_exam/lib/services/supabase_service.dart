@@ -104,16 +104,20 @@ class SupabaseService {
       }
     }
 
-    // Local simulation
-    _localProfile = Profile(
-      id: 'local-user-1',
-      email: email,
-      firstname: firstname,
-      lastname: lastname,
-      roleId: 1,
-      roleName: 'customer',
-    );
-    return null;
+    if (forceLocal) {
+      // Local simulation for unit tests
+      _localProfile = Profile(
+        id: 'local-user-1',
+        email: email,
+        firstname: firstname,
+        lastname: lastname,
+        roleId: 1,
+        roleName: 'customer',
+      );
+      return null;
+    }
+
+    throw const AuthException('Unable to reach Supabase. Check your connection and configuration.');
   }
 
   /// Sign In with Email and Password
@@ -134,17 +138,21 @@ class SupabaseService {
       }
     }
 
-    // Local simulation
-    final isAdmin = email.toLowerCase().contains('admin');
-    _localProfile = Profile(
-      id: isAdmin ? 'local-admin-1' : 'local-user-1',
-      email: email,
-      firstname: isAdmin ? 'Grand' : 'Lumine',
-      lastname: isAdmin ? 'Master' : 'Traveler',
-      roleId: isAdmin ? 2 : 1,
-      roleName: isAdmin ? 'admin' : 'customer',
-    );
-    return null;
+    if (forceLocal) {
+      // Local simulation for unit tests
+      final isAdmin = email.toLowerCase().contains('admin');
+      _localProfile = Profile(
+        id: isAdmin ? 'local-admin-1' : 'local-user-1',
+        email: email,
+        firstname: isAdmin ? 'Grand' : 'Lumine',
+        lastname: isAdmin ? 'Master' : 'Traveler',
+        roleId: isAdmin ? 2 : 1,
+        roleName: isAdmin ? 'admin' : 'customer',
+      );
+      return null;
+    }
+
+    throw const AuthException('Unable to reach Supabase. Check your connection and configuration.');
   }
 
   /// Sign In with Google OAuth
@@ -157,15 +165,19 @@ class SupabaseService {
       );
     }
 
-    _localProfile = const Profile(
-      id: 'local-google-user',
-      email: 'traveler@gmail.com',
-      firstname: 'Lumine',
-      lastname: 'Traveler',
-      roleId: 1,
-      roleName: 'customer',
-    );
-    return true;
+    if (forceLocal) {
+      _localProfile = const Profile(
+        id: 'local-google-user',
+        email: 'traveler@gmail.com',
+        firstname: 'Lumine',
+        lastname: 'Traveler',
+        roleId: 1,
+        roleName: 'customer',
+      );
+      return true;
+    }
+
+    throw const AuthException('Unable to reach Supabase. Check your connection and configuration.');
   }
 
   /// Sign Out
@@ -194,7 +206,26 @@ class SupabaseService {
           return Profile.fromMap(Map<String, dynamic>.from(res));
         }
       } catch (e) {
-        debugPrint('[SupabaseService] getProfile error: $e');
+        debugPrint('[SupabaseService] getProfile notice (table may need setup): $e');
+      }
+
+      // If database profile row not found yet (e.g. schema migration in progress),
+      // gracefully extract the authenticated user's real Supabase metadata.
+      final user = _client?.auth.currentUser;
+      if (user != null && user.id == userId) {
+        final meta = user.userMetadata ?? {};
+        final fullName = (meta['full_name'] ?? meta['name'] ?? '').toString().trim();
+        final parts = fullName.isNotEmpty ? fullName.split(' ') : <String>[];
+        final first = (meta['firstname'] ?? (parts.isNotEmpty ? parts.first : '')).toString();
+        final last = (meta['lastname'] ?? (parts.length > 1 ? parts.sublist(1).join(' ') : '')).toString();
+        return Profile(
+          id: user.id,
+          email: user.email ?? '',
+          firstname: first.isNotEmpty ? first : (user.email?.split('@').first ?? 'Traveler'),
+          lastname: last,
+          roleId: 1,
+          roleName: 'customer',
+        );
       }
     }
 
