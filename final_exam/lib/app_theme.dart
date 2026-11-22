@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static const Color primaryBrandColor = Color.fromARGB(255, 206, 0, 182);
   static const Color secondaryBrandColor = Color.fromARGB(255, 64, 136, 224);
+  static const String fontFamily = 'Genshin';
 
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
@@ -16,7 +16,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
-      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
+      fontFamily: fontFamily,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
@@ -46,7 +46,7 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFF121212),
-      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+      fontFamily: fontFamily,
       appBarTheme: AppBarTheme(
         backgroundColor: const Color(0xFF1F1B24),
         foregroundColor: Colors.white,
