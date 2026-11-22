@@ -38,6 +38,8 @@ dependencies:
   http: ^1.6.0
   flutter_riverpod: ^2.5.1
   intl: ^0.20.3
+  desktop_drop: ^0.8.4
+  file_picker: ^13.4.1
 
 dev_dependencies:
   flutter_test:

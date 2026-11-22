@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +11,7 @@ import '../models/product.dart';
 import '../providers/auth_provider.dart';
 import '../providers/category_provider.dart';
 import '../providers/product_provider.dart';
+import '../providers/supabase_provider.dart';
 
 class ProductFormScreen extends ConsumerStatefulWidget {
   final int? productId;
@@ -32,13 +37,20 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   bool _isSaving = false;
   Product? _existingProduct;
 
+  // Drag and drop & image picker state
+  bool _isDragging = false;
+  bool _isUploadingImage = false;
+  Uint8List? _imageBytes;
+  String? _imageFileName;
+  bool _showManualUrl = false;
+
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
     _priceController = TextEditingController();
     _stockController = TextEditingController(text: '10');
-    _imageController = TextEditingController(text: 'https://enka.network/ui/UI_AvatarIcon_Zhongli_Card.png');
+    _imageController = TextEditingController();
     _descController = TextEditingController();
     _ratingController = TextEditingController(text: '4.8');
     _badgeController = TextEditingController();
@@ -70,6 +82,48 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _ratingController.dispose();
     _badgeController.dispose();
     super.dispose();
+  }
+
+  Future<void> _processImageBytes(Uint8List bytes, String fileName) async {
+    setState(() {
+      _imageBytes = bytes;
+      _imageFileName = fileName;
+      _isUploadingImage = true;
+    });
+
+    try {
+      final service = ref.read(supabaseServiceProvider);
+      final url = await service.uploadProductImage(
+        bytes: bytes,
+        fileName: fileName,
+      );
+      if (url != null && mounted) {
+        setState(() {
+          _imageController.text = url;
+        });
+      }
+    } catch (e) {
+      debugPrint('[ProductFormScreen] Upload error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
+  }
+
+  Future<void> _pickImageFile() async {
+    try {
+      final files = await FilePicker.pickFiles(
+        type: FileType.image,
+      );
+      if (files.isNotEmpty) {
+        final file = files.first;
+        final bytes = await file.readAsBytes();
+        await _processImageBytes(bytes, file.name);
+      }
+    } catch (e) {
+      debugPrint('[ProductFormScreen] FilePicker error: $e');
+    }
   }
 
   Future<void> _saveProduct() async {
@@ -139,6 +193,264 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  Widget _buildPreviewImage() {
+    if (_imageBytes != null) {
+      return Image.memory(
+        _imageBytes!,
+        fit: BoxFit.contain,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    }
+    final url = _imageController.text.trim();
+    if (url.startsWith('data:image')) {
+      try {
+        final commaIdx = url.indexOf(',');
+        final base64Str = commaIdx >= 0 ? url.substring(commaIdx + 1) : url;
+        final bytes = base64Decode(base64Str);
+        return Image.memory(bytes, fit: BoxFit.contain);
+      } catch (_) {}
+    }
+    if (url.startsWith('assets/')) {
+      return Image.asset(url, fit: BoxFit.contain);
+    }
+    if (url.startsWith('http')) {
+      return Image.network(
+        url,
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => const Center(
+          child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+        ),
+      );
+    }
+    return const Center(child: Icon(Icons.image, size: 48, color: Colors.grey));
+  }
+
+  Widget _buildImageDropZone(ThemeData theme) {
+    final hasImage = _imageBytes != null || _imageController.text.trim().isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.photo_library_outlined, size: 18, color: Colors.deepOrange),
+            const SizedBox(width: 8),
+            Text(
+              'Product Image',
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            TextButton.icon(
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+              onPressed: () => setState(() => _showManualUrl = !_showManualUrl),
+              icon: Icon(_showManualUrl ? Icons.keyboard_arrow_up : Icons.link, size: 16),
+              label: Text(_showManualUrl ? 'Hide manual URL' : 'Or paste URL',
+                  style: const TextStyle(fontSize: 12)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        DropTarget(
+          onDragEntered: (_) => setState(() => _isDragging = true),
+          onDragExited: (_) => setState(() => _isDragging = false),
+          onDragDone: (detail) async {
+            setState(() => _isDragging = false);
+            if (detail.files.isNotEmpty) {
+              final file = detail.files.first;
+              final bytes = await file.readAsBytes();
+              await _processImageBytes(bytes, file.name);
+            }
+          },
+          child: hasImage
+              ? Container(
+                  height: 200,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _isDragging ? Colors.deepOrange : theme.dividerColor,
+                      width: _isDragging ? 2.5 : 1.5,
+                    ),
+                    color: _isDragging
+                        ? Colors.deepOrange.withValues(alpha: 0.08)
+                        : (theme.brightness == Brightness.dark
+                            ? Colors.black26
+                            : Colors.grey.shade50),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: _buildPreviewImage(),
+                        ),
+                      ),
+                      if (_isUploadingImage)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(color: Colors.white),
+                                SizedBox(height: 10),
+                                Text(
+                                  'Uploading to Supabase Storage...',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      Positioned(
+                        top: 10,
+                        left: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_circle, color: Colors.greenAccent, size: 15),
+                              const SizedBox(width: 6),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 220),
+                                child: Text(
+                                  _imageFileName ??
+                                      (_imageController.text.startsWith('http')
+                                          ? 'Online Image Attached'
+                                          : 'Image Ready'),
+                                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FilledButton.tonalIcon(
+                              style: FilledButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                backgroundColor: Colors.white.withValues(alpha: 0.9),
+                                foregroundColor: Colors.black87,
+                              ),
+                              onPressed: _pickImageFile,
+                              icon: const Icon(Icons.swap_horiz, size: 16),
+                              label: const Text('Change'),
+                            ),
+                            const SizedBox(width: 6),
+                            IconButton.filled(
+                              style: IconButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                backgroundColor: Colors.red.withValues(alpha: 0.85),
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _imageBytes = null;
+                                  _imageFileName = null;
+                                  _imageController.clear();
+                                });
+                              },
+                              icon: const Icon(Icons.close, size: 16),
+                              tooltip: 'Remove Image',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : InkWell(
+                  onTap: _pickImageFile,
+                  borderRadius: BorderRadius.circular(16),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 160,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: _isDragging
+                          ? Colors.deepOrange.withValues(alpha: 0.12)
+                          : (theme.brightness == Brightness.dark
+                              ? Colors.white.withValues(alpha: 0.04)
+                              : Colors.black.withValues(alpha: 0.02)),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _isDragging
+                            ? Colors.deepOrange
+                            : theme.colorScheme.outline.withValues(alpha: 0.4),
+                        width: _isDragging ? 2.5 : 1.5,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        AnimatedScale(
+                          scale: _isDragging ? 1.2 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            _isDragging ? Icons.file_download : Icons.cloud_upload_outlined,
+                            size: 46,
+                            color: _isDragging ? Colors.deepOrange : theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _isDragging
+                              ? 'Release to upload image!'
+                              : 'Drag & Drop product image here',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: _isDragging ? Colors.deepOrange : null,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'or click to browse from device (PNG, JPG, WEBP)',
+                          style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+
+        if (_showManualUrl) ...[
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _imageController,
+            decoration: const InputDecoration(
+              labelText: 'Manual Image URL (Optional)',
+              hintText: 'https://...',
+              prefixIcon: Icon(Icons.link),
+            ),
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -264,7 +576,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                               labelText: 'Category *',
                               prefixIcon: Icon(Icons.category_outlined),
                             ),
-                            items: cats.map((Category c) {
+                            items: cats.map<DropdownMenuItem<int>>((Category c) {
                               return DropdownMenuItem<int>(
                                 value: c.id,
                                 child: Text(c.name),
@@ -278,18 +590,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                         loading: () => const LinearProgressIndicator(),
                         error: (_, _) => const Text('Failed to load categories.'),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
 
-                      // Image URL
-                      TextFormField(
-                        controller: _imageController,
-                        decoration: const InputDecoration(
-                          labelText: 'Image Asset or CDN URL',
-                          hintText: 'https://enka.network/...',
-                          prefixIcon: Icon(Icons.image_outlined),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      // Drag and Drop Image Zone
+                      _buildImageDropZone(theme),
+                      const SizedBox(height: 20),
 
                       // Rating & Badge
                       Row(
